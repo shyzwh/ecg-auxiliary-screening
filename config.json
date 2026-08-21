@@ -1,0 +1,21 @@
+{
+  "_comment":"系统配置文件，存所有可调节的参数。以后改阈值、改路径，都改这里，不动代码。",
+
+  "risk_threshold_medium": 0.4,
+  "risk_threshold_high": 0.7,
+  "default_duration_sec": 30,
+  "model_path": "models/ecg_risk_xgb_model.json",
+  "cnn_model_path": "models/cnn_model.h5",
+  "scaler_path": "models/ecg_scaler.pkl",
+  "storage_path": "storage/records.json",
+  "upload_dir": "uploads",
+  "report_dir": "reports",
+  "log_dir": "logs",
+  "notch_freq": "auto",
+  "show_shap": true,
+  "show_r_peaks": true,
+
+  "qtc_threshold_male": 440,
+  "qtc_threshold_female": 460,
+  "qtc_threshold_default": 450
+}
