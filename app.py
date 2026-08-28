@@ -22,6 +22,12 @@ from src.preprocess import preprocess_ecg
 from src.report_gen import generate_pdf_report, generate_report
 
 
+st.set_page_config(
+    page_title="心电风险辅助筛查系统",
+    page_icon="assets/favicon.jpg",
+    layout="wide"
+)
+
 APP_VERSION = "v1.1.0"
 RISK_COLORS = {"低危": "#52c41a", "中危": "#faad14", "高危": "#ff4d4f"}
 RISK_ICONS = {"低危": "✓", "中危": "!", "高危": "!"}
