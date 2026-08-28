@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-08-28T18:25:02.688949+00:00",
+  "data_limitations": [
+    "training_data.csv 的 risk_label 不是医生独立标注的证据",
+    "CNN 标签只有 normal/abnormal，不能计算各类型心律失常敏感性",
+    "当前没有 7:2:1 划分产生的固定独立测试集",
+    "真实端到端耗时未能验证，仅提供模型批量推理耗时"
+  ],
+  "xgboost": {
+    "data_source": "D:\\桌面\\王涵—AI 护心镜—基于深度学习异常定位与可解释XGBoost 的心电风险辅助筛查系统-最终版\\ECG-Auxiliary-Screening\\training_data.csv",
+    "label_rule": "training_data.csv 的 risk_label；脚本不重新生成标签",
+    "split": "分层 80/20 留出，random_state=42；不是独立医生标注测试集",
+    "status": "verified_on_available_holdout",
+    "sample_count": 47,
+    "test_sample_count": 10,
+    "classes": {
+      "0": "low",
+      "1": "medium",
+      "2": "high"
+    },
+    "accuracy": 0.9,
+    "macro_f1": 0.8901098901098901,
+    "sensitivity_by_class": {
+      "low": 0.8571428571428571,
+      "medium": 1.0,
+      "high": null
+    },
+    "specificity_by_class": {
+      "low": 1.0,
+      "medium": 0.8571428571428571,
+      "high": 1.0
+    },
+    "high_risk_sensitivity": null,
+    "confusion_matrix": [
+      [
+        6,
+        1,
+        0
+      ],
+      [
+        0,
+        3,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "model_inference_seconds_test_batch": 0.002490400045644492,
+    "model_inference_ms_per_sample": 0.2490400045644492,
+    "model_parameters": {
+      "feature_count": 12,
+      "boosted_tree_count": 300,
+      "objective": "multi:softmax",
+      "exact_parameter_count": "不适用于 XGBoost 树模型；已输出树数量和模型参数配置",
+      "configured_parameters": {
+        "objective": "multi:softmax",
+        "base_score": [
+          4.7742968,
+          3.9140973,
+          -8.688395
+        ],
+        "booster": "gbtree",
+        "enable_categorical": false,
+        "missing": NaN
+      }
+    }
+  },
+  "cnn": {
+    "data_source": "D:\\桌面\\王涵—AI 护心镜—基于深度学习异常定位与可解释XGBoost 的心电风险辅助筛查系统-最终版\\ECG-Auxiliary-Screening\\cnn_beats_real.npy",
+    "label_source": "D:\\桌面\\王涵—AI 护心镜—基于深度学习异常定位与可解释XGBoost 的心电风险辅助筛查系统-最终版\\ECG-Auxiliary-Screening\\cnn_labels_real.npy",
+    "label_rule": "cnn_labels_real.npy 的 0/1 二分类标签；未提供心律失常细分类标签",
+    "split": "分层 80/20 留出，random_state=42；不是按患者或记录独立划分",
+    "arrhythmia_type_sensitivity": "未能验证：标签没有心律失常类型",
+    "status": "verified_on_available_holdout",
+    "sample_count": 29759,
+    "test_sample_count": 5952,
+    "class_distribution": {
+      "0": 26302,
+      "1": 3457
+    },
+    "accuracy": 0.9800067204301075,
+    "macro_f1": 0.9489295980093526,
+    "abnormal_beat_detection_rate": 0.8610709117221418,
+    "sensitivity_by_class": {
+      "normal": 0.9956282075651017,
+      "abnormal": 0.8610709117221418
+    },
+    "confusion_matrix": [
+      [
+        5238,
+        23
+      ],
+      [
+        96,
+        595
+      ]
+    ],
+    "model_inference_seconds_test_batch": 2.8370997000019997,
+    "model_inference_ms_per_sample": 0.47666325604872306,
+    "model_parameters": {
+      "trainable_and_non_trainable_count": 43521,
+      "input_shape": [
+        null,
+        252,
+        1
+      ],
+      "output_shape": [
+        null,
+        1
+      ]
+    }
+  }
+}

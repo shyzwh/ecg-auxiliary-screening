@@ -11,7 +11,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = {
     "risk_threshold_medium": 0.4,
     "risk_threshold_high": 0.7,
-    "low_confidence_threshold": 0.8,
     "default_duration_sec": 30,
     "model_path": "models/ecg_risk_xgb_model.json",
     "cnn_model_path": "models/cnn_model.h5",
@@ -22,21 +21,15 @@ DEFAULT_CONFIG = {
     "cnn_beats_real_path": "cnn_beats_real.npy",
     "cnn_labels_real_path": "cnn_labels_real.npy",
     "storage_path": "storage/records.json",
-    "waveform_dir": "storage/waveforms",
     "upload_dir": "uploads",
     "report_dir": "reports",
-    "suggestions_path": "config/suggestions.json",
     "log_dir": "logs",
     "notch_freq": "auto",
     "show_shap": True,
     "show_r_peaks": True,
     "bandpass_low": 0.5,
     "bandpass_high": 40.0,
-    "medfilt_kernel": 3,
-    "qtc_threshold_male": 440,
-    "qtc_threshold_female": 460,
-    "qtc_threshold_default": 450,
-    "qtc_threshold_mild_high": 500
+    "medfilt_kernel": 3
 }
 
 
@@ -52,7 +45,7 @@ def resolve_config_paths(config):
     for key in (
         "model_path", "cnn_model_path", "scaler_path", "data_dir",
         "cnn_beats_path", "cnn_labels_path", "cnn_beats_real_path",
-        "cnn_labels_real_path", "storage_path", "waveform_dir", "upload_dir", "report_dir", "suggestions_path",
+        "cnn_labels_real_path", "storage_path", "upload_dir", "report_dir",
         "log_dir",
     ):
         if key in result:
@@ -91,7 +84,7 @@ def save_config(config, config_path="config.json"):
         for key in (
             "model_path", "cnn_model_path", "scaler_path", "data_dir",
             "cnn_beats_path", "cnn_labels_path", "cnn_beats_real_path",
-            "cnn_labels_real_path", "storage_path", "waveform_dir", "upload_dir", "report_dir", "suggestions_path",
+            "cnn_labels_real_path", "storage_path", "upload_dir", "report_dir",
             "log_dir",
         ):
             value = portable_config.get(key)
