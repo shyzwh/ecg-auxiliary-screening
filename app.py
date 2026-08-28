@@ -136,7 +136,7 @@ def serialize_value(value):
         return value.item()
     if isinstance(value, np.ndarray):
         return value.tolist()
-    if isinstance(value, dict):
+    if isinstance(value, dict):``
         return {key: serialize_value(item) for key, item in value.items()}
     if isinstance(value, list):
         return [serialize_value(item) for item in value]
