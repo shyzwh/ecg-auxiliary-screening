@@ -5,15 +5,20 @@ from .preprocess import preprocess_ecg
 from .feature_extract import pan_tompkins
 from .beat_segmenter import segment_beats
 from .logger import logger
+from .config_utils import DEFAULT_CONFIG, resolve_path
 
 
-def build_cnn_dataset(record_ids, before=0.25, after=0.45):
+def build_cnn_dataset(record_ids, before=0.25, after=0.45, data_dir=None, beats_path=None, labels_path=None):
     """构建CNN训练数据集，标签暂用简单规则替代"""
     all_beats = []
     all_labels = []
 
+    data_dir = resolve_path(data_dir or DEFAULT_CONFIG["data_dir"])
+    beats_path = resolve_path(beats_path or DEFAULT_CONFIG["cnn_beats_path"])
+    labels_path = resolve_path(labels_path or DEFAULT_CONFIG["cnn_labels_path"])
+
     for rid in record_ids:
-        file_path = f"D:/桌面/ECG-Auxiliary-Screening/data/mitbih/mit-bih-arrhythmia-database-1.0.0/{rid}.dat"
+        file_path = data_dir / f"{rid}.dat"
 
         status, signal, fs, _ = load_ecg(file_path)
         if status != "success":
@@ -45,8 +50,8 @@ def build_cnn_dataset(record_ids, before=0.25, after=0.45):
     X = np.concatenate(all_beats, axis=0)
     y = np.concatenate(all_labels, axis=0)
 
-    np.save("cnn_beats.npy", X)
-    np.save("cnn_labels.npy", y)
+    np.save(beats_path, X)
+    np.save(labels_path, y)
 
     logger.info(f"CNN数据集构建完成，共{len(X)}个心拍")
     return "success", X, y, f"CNN数据集构建完成，共{len(X)}个心拍"

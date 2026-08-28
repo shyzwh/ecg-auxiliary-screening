@@ -5,9 +5,10 @@
 from .data_loader import load_ecg
 from .preprocess import preprocess_ecg
 from .feature_extract import pan_tompkins, extract_all_features
+from .config_utils import DEFAULT_CONFIG, resolve_path
 
 # 1. 读取真实MIT-BIH数据
-file_path = "D:/桌面/ECG-Auxiliary-Screening/data/mitbih/mit-bih-arrhythmia-database-1.0.0/100.dat"
+file_path = resolve_path(DEFAULT_CONFIG["data_dir"]) / "100.dat"
 status, signal, fs, msg = load_ecg(file_path)
 print(f"读取结果：{status}，{msg}")
 

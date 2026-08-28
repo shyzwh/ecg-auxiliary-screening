@@ -6,15 +6,20 @@ from .feature_extract import pan_tompkins
 from .beat_segmenter import segment_beats
 from .annotation_loader import load_beat_annotations, map_labels
 from .logger import logger
+from .config_utils import DEFAULT_CONFIG, resolve_path
 
 
-def build_real_cnn_dataset(record_ids):
+def build_real_cnn_dataset(record_ids, data_dir=None, beats_path=None, labels_path=None):
     """用真实注释构建CNN训练数据集"""
     all_beats = []
     all_labels = []
 
+    data_dir = resolve_path(data_dir or DEFAULT_CONFIG["data_dir"])
+    beats_path = resolve_path(beats_path or DEFAULT_CONFIG["cnn_beats_real_path"])
+    labels_path = resolve_path(labels_path or DEFAULT_CONFIG["cnn_labels_real_path"])
+
     for rid in record_ids:
-        base_path = f"D:/桌面/ECG-Auxiliary-Screening/data/mitbih/mit-bih-arrhythmia-database-1.0.0/{rid}"
+        base_path = data_dir / rid
 
         status, signal, fs, _ = load_ecg(f"{base_path}.dat")
         if status != "success":
@@ -67,8 +72,8 @@ def build_real_cnn_dataset(record_ids):
     X = np.concatenate(all_beats, axis=0)
     y = np.concatenate([np.array(x) for x in all_labels], axis=0)
 
-    np.save("cnn_beats_real.npy", X)
-    np.save("cnn_labels_real.npy", y)
+    np.save(beats_path, X)
+    np.save(labels_path, y)
 
     logger.info(f"真实CNN数据集构建完成，共{len(X)}个心拍，异常{sum(y)}个")
     return "success", X, y, f"真实CNN数据集完成，共{len(X)}个，异常{sum(y)}个"

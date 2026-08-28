@@ -1,0 +1,13 @@
+streamlit
+numpy
+pandas
+matplotlib
+scipy
+wfdb
+neurokit2
+xgboost
+shap
+tensorflow
+plotly
+joblib
+scikit-learn
