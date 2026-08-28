@@ -42,7 +42,8 @@ DEFAULT_CONFIG = {
 
 def resolve_path(path):
     """将配置中的相对路径解析到项目根目录，绝对路径仍可由配置覆盖。"""
-    candidate = Path(path).expanduser()
+    normalized_path = str(path).replace("\\", "/")
+    candidate = Path(normalized_path).expanduser()
     return candidate if candidate.is_absolute() else PROJECT_ROOT / candidate
 
 

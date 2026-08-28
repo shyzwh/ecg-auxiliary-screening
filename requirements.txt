@@ -12,3 +12,4 @@ plotly
 joblib
 scikit-learn
 reportlab
+seaborn
