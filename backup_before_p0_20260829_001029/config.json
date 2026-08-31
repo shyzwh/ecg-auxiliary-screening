@@ -1,32 +1,18 @@
 {
   "risk_threshold_medium": 0.4,
   "risk_threshold_high": 0.7,
-  "low_confidence_threshold": 0.8,
   "default_duration_sec": 30,
-<<<<<<< HEAD
   "model_path": "models\\ecg_risk_xgb_model.json",
   "cnn_model_path": "models\\cnn_model.h5",
   "scaler_path": "models\\ecg_scaler.pkl",
   "data_dir": "data\\mitbih\\mit-bih-arrhythmia-database-1.0.0",
-=======
-  "model_path": "models/ecg_risk_xgb_model.json",
-  "cnn_model_path": "models/cnn_model.h5",
-  "scaler_path": "models/ecg_scaler.pkl",
-  "data_dir": "data/mitbih/mit-bih-arrhythmia-database-1.0.0",
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
   "cnn_beats_path": "cnn_beats.npy",
   "cnn_labels_path": "cnn_labels.npy",
   "cnn_beats_real_path": "cnn_beats_real.npy",
   "cnn_labels_real_path": "cnn_labels_real.npy",
-<<<<<<< HEAD
   "storage_path": "storage\\records.json",
-=======
-  "storage_path": "storage/records.json",
-  "waveform_dir": "storage/waveforms",
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
   "upload_dir": "uploads",
   "report_dir": "reports",
-  "suggestions_path": "config/suggestions.json",
   "log_dir": "logs",
   "notch_freq": "auto",
   "show_shap": true,
@@ -39,10 +25,6 @@
   "qtc_threshold_male": 440,
   "qtc_threshold_female": 460,
   "qtc_threshold_default": 450,
-<<<<<<< HEAD
-=======
-  "qtc_threshold_mild_high": 500,
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
   "llm_enabled": false,
   "llm_provider": "OpenAI 兼容接口",
   "llm_api_key": "",

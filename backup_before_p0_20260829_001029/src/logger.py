@@ -1,16 +1,10 @@
 import os
 import json
 from pathlib import Path
-<<<<<<< HEAD
-=======
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
 import datetime
-
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 class Logger:

@@ -2,11 +2,7 @@ import wfdb
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
-from src.config_utils import DEFAULT_CONFIG, resolve_path
-=======
 from .config_utils import DEFAULT_CONFIG, resolve_path
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
 
 data_path = resolve_path(DEFAULT_CONFIG["data_dir"]) / "100"
 record = wfdb.rdrecord(data_path, channels=[0])

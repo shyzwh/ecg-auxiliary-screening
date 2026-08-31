@@ -2,17 +2,10 @@
 # 运行后需要再输入 python -m src.test_full_pipeline 进行测试
 
 # 相对引入
-<<<<<<< HEAD
-from src.data_loader import load_ecg
-from src.preprocess import preprocess_ecg
-from src.feature_extract import pan_tompkins, extract_all_features
-from src.config_utils import DEFAULT_CONFIG, resolve_path
-=======
 from .data_loader import load_ecg
 from .preprocess import preprocess_ecg
 from .feature_extract import pan_tompkins, extract_all_features
 from .config_utils import DEFAULT_CONFIG, resolve_path
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
 
 # 1. 读取真实MIT-BIH数据
 file_path = resolve_path(DEFAULT_CONFIG["data_dir"]) / "100.dat"

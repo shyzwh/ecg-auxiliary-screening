@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "rules": [
     {
       "id": "rule_1",
@@ -39,4 +40,88 @@
     "QRS": "检测到QRS增宽{value}ms，提示可能存在传导异常，建议进一步评估。",
     "RR_std": "检测到RR间期波动{value}ms，提示节律稳定性下降，建议加强动态监测。"
   }
+=======
+  "version": "1.0",
+  "notice": "仅供参考，请咨询医生",
+  "rules": [
+    {
+      "id": "abnormal_high_significant_st_shift",
+      "cnn": "abnormal",
+      "risk": "high",
+      "severity": "significant",
+      "feature": "ST_shift",
+      "medical_advice": "请优先由医生复核波形异常与 ST 段变化，结合症状和病史评估是否需要及时处理。",
+      "plain_language": "这次筛查同时提示波形和整体风险需要重点关注，不代表已经确定患有某种疾病。",
+      "doctor_communication": "本次结果提示波形异常并伴较高风险，建议您结合症状尽快完成专业复核。",
+      "follow_up": "建议尽快由心内科医生复核，必要时根据医生意见复查心电图或进行动态心电检查。",
+      "lifestyle": "在医生复核前避免剧烈运动，保证休息，记录胸闷、心悸、头晕等症状变化。",
+      "notice": "仅供参考，请咨询医生"
+    },
+    {
+      "id": "abnormal_high_qtc",
+      "cnn": "abnormal",
+      "risk": "high",
+      "severity": "*",
+      "feature": "QTc",
+      "medical_advice": "请核对 QTc 测量质量、用药史及电解质相关情况，并由医生判断复查和进一步评估安排。",
+      "plain_language": "结果提示心电波形和风险指标都需要重点复核，QTc 数值偏长需要医生结合情况判断。",
+      "doctor_communication": "筛查提示波形异常且 QTc 需要关注，建议结合用药和既往心电资料进行复核。",
+      "follow_up": "建议近期复查心电图；是否需要动态心电或其他检查由医生根据复核结果决定。",
+      "lifestyle": "避免自行增减药物，减少熬夜和过量咖啡因摄入，如出现明显不适及时就医。",
+      "notice": "仅供参考，请咨询医生"
+    },
+    {
+      "id": "high_general",
+      "cnn": "*",
+      "risk": "high",
+      "severity": "*",
+      "feature": "*",
+      "medical_advice": "请将高风险结果交由医生结合原始波形、临床症状和病史复核，不应仅凭本系统结果作出判断。",
+      "plain_language": "筛查结果提示需要重点关注，但它不是医疗结论，需要医生进一步确认。",
+      "doctor_communication": "本次筛查提示需要重点关注，建议您配合医生结合完整资料进行进一步评估。",
+      "follow_up": "建议尽快咨询医生并按医嘱复查，具体检查项目和时间由医生决定。",
+      "lifestyle": "保持休息和规律作息，暂时避免剧烈运动；如有持续或明显不适，应及时寻求医疗帮助。",
+      "notice": "仅供参考，请咨询医生"
+    },
+    {
+      "id": "abnormal_medium_moderate",
+      "cnn": "abnormal",
+      "risk": "medium",
+      "severity": "moderate",
+      "feature": "*",
+      "medical_advice": "请复核异常心拍位置及相关临床特征，结合症状和既往记录判断是否需要进一步检查。",
+      "plain_language": "波形中发现一些需要留意的变化，整体风险处于中间水平，不能仅凭本次筛查结果下结论。",
+      "doctor_communication": "筛查发现部分波形变化，建议您近期复诊并结合既往资料进一步评估。",
+      "follow_up": "建议近期咨询医生并按医嘱复查心电图，必要时考虑动态心电检查。",
+      "lifestyle": "规律作息，减少熬夜、过量咖啡因和高强度压力，留意心悸等症状。",
+      "notice": "仅供参考，请咨询医生"
+    },
+    {
+      "id": "medium_qtc",
+      "cnn": "*",
+      "risk": "medium",
+      "severity": "*",
+      "feature": "QTc",
+      "medical_advice": "请重点复核 QTc 数值及测量条件，结合性别、用药和病史由医生判断后续安排。",
+      "plain_language": "有一项与心电恢复时间相关的指标需要关注，建议让医生结合个人情况复核。",
+      "doctor_communication": "本次结果显示 QTc 需要关注，建议结合用药和既往心电记录安排复查。",
+      "follow_up": "建议近期复查心电图，是否需要进一步检查请遵循医生意见。",
+      "lifestyle": "避免自行停药或换药，保持规律睡眠，减少过量咖啡因和酒精摄入。",
+      "notice": "仅供参考，请咨询医生"
+    },
+    {
+      "id": "general",
+      "cnn": "*",
+      "risk": "*",
+      "severity": "*",
+      "feature": "*",
+      "medical_advice": "请由医生结合波形、特征指标、症状和病史复核筛查结果，本系统不能替代专业判断。",
+      "plain_language": "这是一份辅助筛查结果，建议把报告交给医生一起查看和解释。",
+      "doctor_communication": "这份报告用于辅助筛查，建议结合您的症状和既往资料进行专业复核。",
+      "follow_up": "请根据医生建议安排复查，复查时间和项目以医生评估为准。",
+      "lifestyle": "保持规律作息、适度活动和均衡饮食，避免熬夜及过量咖啡因摄入。",
+      "notice": "仅供参考，请咨询医生"
+    }
+  ]
+>>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
 }
