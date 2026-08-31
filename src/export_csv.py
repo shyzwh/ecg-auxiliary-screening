@@ -1,14 +1,8 @@
 import numpy as np
 import pandas as pd
-<<<<<<< HEAD
 from src.data_loader import load_ecg
 from src.preprocess import preprocess_ecg
 from src.config_utils import DEFAULT_CONFIG, resolve_path
-=======
-from .data_loader import load_ecg
-from .preprocess import preprocess_ecg
-from .config_utils import DEFAULT_CONFIG, resolve_path
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
 
 
 def export_mitbih_to_csv(record_id, output_path=None, data_dir=None):

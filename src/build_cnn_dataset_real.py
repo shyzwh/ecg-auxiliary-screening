@@ -1,6 +1,5 @@
 # 读取MIT-BIH记录，用真实注释给每个心拍打上“正常=0，异常=1”的标签。
 import numpy as np
-<<<<<<< HEAD
 from src.data_loader import load_ecg
 from src.preprocess import preprocess_ecg
 from src.feature_extract import pan_tompkins
@@ -8,15 +7,6 @@ from src.beat_segmenter import segment_beats
 from src.annotation_loader import load_beat_annotations, map_labels
 from src.logger import logger
 from src.config_utils import DEFAULT_CONFIG, resolve_path
-=======
-from .data_loader import load_ecg
-from .preprocess import preprocess_ecg
-from .feature_extract import pan_tompkins
-from .beat_segmenter import segment_beats
-from .annotation_loader import load_beat_annotations, map_labels
-from .logger import logger
-from .config_utils import DEFAULT_CONFIG, resolve_path
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
 
 
 def build_real_cnn_dataset(record_ids, data_dir=None, beats_path=None, labels_path=None):

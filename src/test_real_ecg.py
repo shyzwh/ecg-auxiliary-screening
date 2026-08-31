@@ -1,12 +1,7 @@
 import wfdb
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
 from src.feature_extract import pan_tompkins, compute_hrv_features
 from src.config_utils import DEFAULT_CONFIG, resolve_path
-=======
-from .feature_extract import pan_tompkins, compute_hrv_features
-from .config_utils import DEFAULT_CONFIG, resolve_path
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
 
 # 1. 读取真实MIT-BIH数据
 record_path = resolve_path(DEFAULT_CONFIG["data_dir"]) / "100"

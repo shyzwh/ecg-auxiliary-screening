@@ -3,16 +3,5 @@ base = "light"
 primaryColor = "#1A5CFF"
 backgroundColor = "#F5F7FA"
 secondaryBackgroundColor = "#EAF0FF"
-<<<<<<< HEAD
 textColor = "#1F2937"
 font = "sans serif"
-
-[server]
-favicon = "assets/favicon.png"
-=======
-textColor = "rgb(31, 41, 55)"
-font = "sans serif"
-
-[server]
-favicon = "assets/favicon.jpg"
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4

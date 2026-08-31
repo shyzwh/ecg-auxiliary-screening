@@ -1,29 +1,14 @@
-<<<<<<< HEAD
 .env
-__pycache__/
-*.pyc
-.DS_Store
-=======
-# Python
 __pycache__/
 *.py[cod]
 .venv/
 venv/
-.env
-
-# Streamlit local secrets
+.DS_Store
 .streamlit/secrets.toml
-
-# Runtime-generated data
 storage/records.json
 storage/waveforms/
 uploads/
 logs/
-
-# Local evaluation caches and temporary files
 .pytest_cache/
 .mypy_cache/
 *.tmp
-
-# Keep trained models and packaged datasets tracked for Streamlit Cloud deployment.
->>>>>>> 5bdb321dece5bc57619bf68e89bf0244b0465ab4
