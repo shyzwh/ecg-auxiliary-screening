@@ -16,6 +16,8 @@ import plotly.graph_objects as go
 import streamlit as st
 import xgboost as xgb
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 from src.cnn_inference import predict_abnormal_beats
 from src.config_utils import DEFAULT_CONFIG, load_config, save_config
 from src.data_loader import load_ecg
@@ -447,14 +449,14 @@ def analysis_page(config):
                     fig = px.bar(shap_df, x="贡献", y="特征", orientation="h", color="贡献", color_continuous_scale=["#1677ff", "#f5222d"])
                     st.plotly_chart(plot_layout(fig, 420), use_container_width=True)
                 elif option == "🐝全局蜂群图":
-                    training_path = os.path.join(os.getcwd(), "training_data.csv")
+                    training_path = os.path.join(BASE_DIR, "training_data.csv")
                     if os.path.exists(training_path):
                         train_df = pd.read_csv(training_path)
                         if set(FEATURE_ORDER).issubset(train_df.columns):
                             train_data = train_df[FEATURE_ORDER].apply(pd.to_numeric, errors="coerce").dropna()
                             if len(train_data) >= 2:
                                 import shap
-                                model = xgb.XGBClassifier(); model.load_model(os.path.join(os.getcwd(), "models", "ecg_risk_xgb_model.json"))
+                                model = xgb.XGBClassifier(); model.load_model(os.path.join(BASE_DIR, "models", "ecg_risk_xgb_model.json"))
                                 explainer = shap.TreeExplainer(model)
                                 shap_values = explainer(train_data.to_numpy(), check_additivity=False)
                                 target_class = int(result.get("risk_num", 0))
@@ -471,14 +473,14 @@ def analysis_page(config):
                     else:
                         st.error("未找到 training_data.csv，无法渲染全局蜂群图。")
                 elif option == "🔄QRS-ST_shift交互图":
-                    training_path = os.path.join(os.getcwd(), "training_data.csv")
+                    training_path = os.path.join(BASE_DIR, "training_data.csv")
                     if os.path.exists(training_path):
                         train_df = pd.read_csv(training_path)
                         if {"QRS", "ST_shift"}.issubset(train_df.columns):
                             train_data = train_df[FEATURE_ORDER].apply(pd.to_numeric, errors="coerce").dropna()
                             if len(train_data) >= 2:
                                 import shap
-                                model = xgb.XGBClassifier(); model.load_model(os.path.join(os.getcwd(), "models", "ecg_risk_xgb_model.json"))
+                                model = xgb.XGBClassifier(); model.load_model(os.path.join(BASE_DIR, "models", "ecg_risk_xgb_model.json"))
                                 explainer = shap.TreeExplainer(model)
                                 shap_values = explainer(train_data.to_numpy(), check_additivity=False)
                                 values = np.asarray(shap_values.values)
@@ -495,13 +497,13 @@ def analysis_page(config):
                     else:
                         st.error("未找到 training_data.csv，无法渲染交互图。")
                 else:
-                    training_path = os.path.join(os.getcwd(), "training_data.csv")
+                    training_path = os.path.join(BASE_DIR, "training_data.csv")
                     if os.path.exists(training_path):
                         train_df = pd.read_csv(training_path)
                         if set(FEATURE_ORDER).issubset(train_df.columns):
                             import shap
                             train_data = train_df[FEATURE_ORDER].apply(pd.to_numeric, errors="coerce").dropna().head(100)
-                            model = xgb.XGBClassifier(); model.load_model(os.path.join(os.getcwd(), "models", "ecg_risk_xgb_model.json"))
+                            model = xgb.XGBClassifier(); model.load_model(os.path.join(BASE_DIR,"models", "ecg_risk_xgb_model.json"))
                             explainer = shap.TreeExplainer(model)
                             shap_values = explainer(train_data.to_numpy(), check_additivity=False)
                             values = np.asarray(shap_values.values)
@@ -727,7 +729,7 @@ def settings_page(config):
 
 # 渲染病例教学页面
 def cases_page():
-    cases_path = os.path.join(os.getcwd(), "config", "cases.json").replace("\\", "/")
+    cases_path = os.path.join(BASE_DIR, "config", "cases.json").replace("\\", "/")
     if not os.path.exists(cases_path):
         st.warning("未找到案例数据文件 config/cases.json")
         return
@@ -754,7 +756,7 @@ def cases_page():
 
 # 渲染病情统计页面
 def statistics_page():
-    records_path = os.path.join(os.getcwd(), "storage", "records.json").replace("\\", "/")
+    records_path = os.path.join(BASE_DIR, "storage", "records.json").replace("\\", "/")
     records = load_history(records_path)
     st.title("病情统计")
     if not records:
