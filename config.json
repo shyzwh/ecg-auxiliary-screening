@@ -6,7 +6,7 @@
   "model_path": "models\\ecg_risk_xgb_model.json",
   "cnn_model_path": "models\\cnn_model.h5",
   "scaler_path": "models\\ecg_scaler.pkl",
-  "data_dir": "data\\mitbih\\mit-bih-arrhythmia-database-1.0.0",
+  "data_dir": "uploads",
   "cnn_beats_path": "cnn_beats.npy",
   "cnn_labels_path": "cnn_labels.npy",
   "cnn_beats_real_path": "cnn_beats_real.npy",
