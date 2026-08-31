@@ -1,151 +1,165 @@
-﻿"""Reusable UI styling helpers for the medical dashboard.
-
-This module centralizes the CSS and small presentation components used by
-multiple pages.
-"""
+﻿"""Reusable UI helpers for the medical ECG dashboard."""
 
 import streamlit as st
 
 
-# 注入全局样式，包含医疗蓝主题、毛玻璃容器和通用组件样式
 def inject_global_css():
-    """注入全局 CSS，提升界面视觉层级和医疗风格。"""
+    """注入全局医疗蓝主题样式，包含毛玻璃卡片和悬停效果。"""
     st.markdown(
         """
         <style>
         :root {
-            --medical-blue: #0f6fff;
-            --medical-deep: #0a2f6b;
+            --medical-blue: #1677ff;
+            --medical-deep: #0b2d7a;
             --medical-soft: #edf5ff;
-            --glass-bg: rgba(255,255,255,0.7);
+            --glass-bg: rgba(255,255,255,0.72);
             --glass-border: rgba(255,255,255,0.9);
-            --text-strong: #183b63;
-            --text-muted: #6b7d99;
+            --text: #18324f;
+            --muted: #667085;
             --success: #2ecc71;
             --warning: #f39c12;
             --danger: #e74c3c;
-            --shadow-soft: 0 12px 28px rgba(23, 77, 155, 0.12);
+            --shadow: 0 12px 28px rgba(23, 77, 155, 0.12);
         }
         html, body, [data-testid="stAppViewContainer"] {
             background: linear-gradient(135deg, #edf6ff 0%, #eaf3ff 48%, #f6fbff 100%);
-            color: var(--text-strong);
-            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+            color: var(--text);
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
         }
         [data-testid="stAppViewContainer"] > .main { background: transparent; }
         [data-testid="stSidebar"] { background: linear-gradient(180deg, #0d63d6 0%, #0a4aad 100%); }
         [data-testid="stSidebar"] * { color: white; }
-        .stApp [data-testid="stHeader"] { background: rgba(255,255,255,0.0); }
-        .stApp footer { visibility: hidden; }
-        .stApp .css-1d391kg { display: none; }
         .glass-panel {
             background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            box-shadow: var(--shadow-soft);
-            padding: 1.1rem 1.2rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            padding: 1rem 1.1rem;
+            margin-bottom: 1rem;
+            min-height: 0;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
         .glass-panel:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 16px 32px rgba(24, 59, 99, 0.18);
+            transform: translateY(-2px);
+            box-shadow: 0 18px 35px rgba(15, 90, 170, 0.16);
         }
         .section-title {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1.05rem;
-            font-weight: 800;
             color: var(--medical-deep);
-            margin: 0 0 0.8rem 0;
+            font-size: 1.08rem;
+            font-weight: 800;
             padding-left: 0.7rem;
             border-left: 4px solid var(--medical-blue);
+            margin-bottom: 0.8rem;
         }
         .risk-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 94px;
-            padding: 0.42rem 0.85rem;
+            padding: 0.38rem 0.8rem;
             border-radius: 999px;
-            font-weight: 700;
-            font-size: 0.82rem;
             color: white;
-            box-shadow: 0 10px 20px rgba(23, 77, 155, 0.15);
+            font-weight: 700;
+            font-size: 0.8rem;
+            min-width: 92px;
         }
         .metric-card {
-            background: rgba(255,255,255,0.84);
-            border: 1px solid rgba(25, 64, 125, 0.08);
-            border-radius: 18px;
+            background: rgba(255,255,255,0.85);
+            border: 1px solid rgba(20, 72, 133, 0.08);
+            border-radius: 16px;
+            padding: 0.9rem 0.8rem;
             min-height: 110px;
-            box-shadow: 0 12px 24px rgba(24, 59, 99, 0.08);
+            box-shadow: 0 10px 20px rgba(20, 72, 133, 0.06);
             transition: transform 0.2s ease;
-            padding: 1rem 0.9rem;
         }
-        .metric-card:hover { transform: translateY(-4px); }
+        .metric-card:hover { transform: translateY(-3px); }
         .metric-label {
-            color: var(--text-muted);
             font-size: 0.72rem;
-            font-weight: 700;
+            color: var(--muted);
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            font-weight: 700;
         }
         .metric-value {
-            margin-top: 0.5rem;
+            margin-top: 0.45rem;
             font-size: 1.7rem;
             font-weight: 900;
             color: var(--medical-deep);
             font-family: "Consolas", "Courier New", monospace;
         }
-        .metric-subtext { margin-top: 0.30rem; color: var(--text-muted); font-size: 0.74rem; }
-        .stButton > button { border-radius: 12px; font-weight: 700; transition: all 0.2s ease; }
-        .stButton > button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(15,111,255,0.18); }
+        .metric-subtext {
+            margin-top: 0.2rem;
+            font-size: 0.74rem;
+            color: var(--muted);
+        }
+        .stButton > button {
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(15,111,255,0.16);
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
 
-# 渲染患者信息卡片，展示姓名、年龄和性别
 def render_patient_card(patient_name="未命名患者", age="未录入", sex="未指定"):
-    """渲染患者基本信息卡片。"""
-    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
-    st.markdown("### 👤 患者信息")
-    st.write(f"姓名：{patient_name}")
-    st.write(f"年龄：{age}")
-    st.write(f"性别：{sex}")
-    st.markdown("</div>", unsafe_allow_html=True)
+    """渲染患者信息卡片。"""
+    st.markdown(
+        f"""
+        <div class="glass-panel" style="min-height:0;">
+            <h3>👤 患者信息</h3>
+            <div>姓名：{patient_name}</div>
+            <div>年龄：{age}</div>
+            <div>性别：{sex}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
-# 渲染上传卡片，统一管理 ECG 文件和示例数据入口
 def render_upload_card():
     """渲染上传卡片。"""
-    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
-    st.markdown("### ⤴️ 采集数据")
+    st.markdown(
+        """
+        <div class="glass-panel" style="min-height:0;">
+            <h3>⤴️ 采集数据</h3>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     uploaded = st.file_uploader("选择 ECG 文件", type=["csv", "txt", "dat"], label_visibility="collapsed")
     demo = st.button("加载示例数据", use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
     return uploaded, demo
 
 
-# 渲染风险标签，按低中高危使用统一颜色和文案
 def render_risk_badge(level="低危", value=None):
-    """按风险等级渲染徽章组件。"""
-    level_map = {"低危": ("#2ecc71", "低危"), "中危": ("#f39c12", "中危"), "高危": ("#e74c3c", "高危"), "未知": ("#6c757d", "未知")}
+    """按风险等级渲染彩色标签。"""
+    level_map = {
+        "低危": ("#2ecc71", "低危"),
+        "中危": ("#f39c12", "中危"),
+        "高危": ("#e74c3c", "高危"),
+        "未知": ("#6c757d", "未知"),
+    }
     color, text = level_map.get(level, level_map["未知"])
     if value is not None:
         text = f"{text} · {value:.2f}"
     st.markdown(f'<span class="risk-badge" style="background:linear-gradient(135deg,{color},#183b63);">{text}</span>', unsafe_allow_html=True)
 
 
-# 渲染指标卡片，展示关键数值并保持页面视觉一致
 def render_metric_card(label="指标", value="--", unit=""):
-    """渲染单个指标卡片。"""
-    st.markdown(f'<div class="metric-card"><div class="metric-label">{label}</div><div class="metric-value">{value}</div><div class="metric-subtext">{unit}</div></div>', unsafe_allow_html=True)
+    """渲染指标卡片。"""
+    st.markdown(
+        f'<div class="metric-card"><div class="metric-label">{label}</div><div class="metric-value">{value}</div><div class="metric-subtext">{unit}</div></div>',
+        unsafe_allow_html=True,
+    )
 
 
-# 渲染分节标题，规范页面结构和视觉层级
-def render_section_title(title="分节标题"):
+def render_section_title(text="分节标题"):
     """渲染分节标题。"""
-    st.markdown(f'<div class="section-title">{title}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)

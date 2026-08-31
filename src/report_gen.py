@@ -236,41 +236,46 @@ def judge_feature(name, value, thresholds, sex=""):
     return "正常", f"{value}{unit}"
 
 
-def build_suggestion(risk_num, abn_level, key_abnormals, features=None, cnn_status="normal", abnormal_count=0, total_beats=0, sex="未指定"):
-    """综合形态通路和数值通路生成病因分析与生活建议。"""
-    features = features or {}
-    st_shift = float(features.get("ST_shift", 0) or 0)
-    qtc = float(features.get("QTc", 0) or 0)
-    heart_rate = float(features.get("HR", 0) or 0)
-    st_abs = abs(st_shift)
-    st_direction = "抬高" if st_shift > 0 else "压低"
+def _normalize_cnn_status(cnn_status, abnormal_count=0):
+    """统一 CNN 状态为 normal/abnormal。"""
+    if cnn_status is None:
+        return "normal"
+    raw = str(cnn_status).lower()
+    if raw in {"normal", "ok", "success", "stable"}:
+        return "normal"
+    if raw in {"abnormal", "warning", "alert", "failed", "error"}:
+        return "abnormal"
+    if abnormal_count and int(abnormal_count) > 0:
+        return "abnormal"
+    return "normal"
 
-    morphology = f"形态通路检测到{abnormal_count}个异常心拍，占总心拍{(abnormal_count / max(total_beats, 1)):.1%}，异常水平为{abn_level}。"
+
+def build_suggestion(risk_num, abn_level, key_abnormals, features=None, cnn_status="normal", abnormal_count=0, total_beats=0, sex="未指定"):
+    """综合形态通路和数值通路生成病因分析、生活建议和医生沟通话术。"""
+    features = features or {}
+    cnn_state = _normalize_cnn_status(cnn_status, abnormal_count)
+    risk_num = int(risk_num)
+    morph_ratio = (abnormal_count / max(total_beats, 1)) if total_beats else 0.0
+
+    morphology = f"形态通路检测到{abnormal_count}个异常心拍，占总心拍{morph_ratio:.1%}，异常水平为{abn_level}。"
     numeric = "；".join(f"{name}：{features.get(name)}（{judge_feature(name, features.get(name), DEFAULT_THRESHOLDS, sex=sex)[1]}）" for name in key_abnormals)
     numeric = numeric or "数值通路未发现超过当前参考阈值的特征异常。"
-    if cnn_status == "normal" and risk_num == 0:
-        cause = f"{morphology}{numeric}两条通路均未提示明显高风险，当前结果更支持稳定状态。"
-        advice = "保持规律作息和中等强度有氧运动，每次约30分钟；无特殊症状可按常规健康管理复查，若出现胸闷胸痛立即拨打120。"
-    elif cnn_status == "normal" and risk_num == 1:
-        cause = f"{morphology}{numeric}提示形态通路暂未发现异常，但数值通路存在风险特征，需排查早期缺血、传导或复极改变。"
-        advice = "休息并避免剧烈运动，减少咖啡因摄入，1周内复查心电图；如出现胸闷、胸痛或气促立即拨打120。"
-    elif cnn_status == "normal" and risk_num == 2:
-        cause = f"{morphology}{numeric}提示虽未见异常心拍，但数值通路存在严重异常，可能对应急性缺血或显著复极风险。"
-        advice = "立即停止活动并静卧，禁止自行驾车，立即到心内科急诊；出现胸痛、冷汗或呼吸困难立即拨打120。"
-    elif cnn_status == "abnormal" and risk_num == 0:
-        cause = f"{morphology}{numeric}提示波形异常与整体数值低危并存，可能为偶发节律变化，仍需观察其持续性。"
-        advice = "当天避免剧烈运动并保证充分休息，1周内预约动态心电图；若出现持续心悸、胸闷胸痛立即拨打120。"
-    elif cnn_status == "abnormal" and risk_num == 1:
-        cause = f"{morphology}{numeric}提示双通路异常相互印证，可能存在节律不稳并伴缺血、传导或复极风险。"
-        advice = "停止高强度运动并休息，24小时内尽快到心内科就诊，按医嘱复查；出现胸闷胸痛、晕厥立即拨打120。"
-    elif cnn_status == "abnormal" and risk_num == 2:
-        cause = f"{morphology}{numeric}提示双通路均为高风险信号，需警惕严重心律失常、急性缺血或复极异常。"
-        advice = "立即停止活动、保持静卧并呼叫急救，马上到心内科急诊；不要等待复查，胸痛、晕厥或气促时立即拨打120。"
-    else:
-        cause = f"{morphology}{numeric}当前通路结果需要结合临床症状进一步判断。"
-        advice = "暂缓剧烈运动并休息，尽快咨询专业医护人员；出现胸闷胸痛立即拨打120。"
 
-    return f"病因分析：{cause}\n生活建议：{advice}"
+    decisions = {
+        ("normal", 0): {"title": "健康维护", "cause": f"{morphology}{numeric}两条通路均未提示明显高风险，当前结果更支持稳定状态。", "advice": "保持规律作息和中等强度有氧运动，每次约30分钟；无特殊症状可按常规健康管理复查，若出现胸闷胸痛立即拨打120。", "script": "您的心电参数整体稳定，当前更像健康维护状态；建议继续保持规律生活方式，并在出现胸闷、胸痛或明显心悸时及时就医。"},
+        ("normal", 1): {"title": "数值异常复查", "cause": f"{morphology}{numeric}提示形态通路暂未发现明显异常，但数值通路存在风险特征，需排查早期缺血、传导或复极改变。", "advice": "休息并避免剧烈运动，减少咖啡因摄入，1周内复查心电图；如出现胸闷、胸痛或气促立即拨打120。", "script": "目前主要体现在数值指标的偏异常，并非典型危急状态；建议在一周内复查心电图，同时关注胸闷、心悸和气促等症状。"},
+        ("normal", 2): {"title": "数值严重就医", "cause": f"{morphology}{numeric}提示虽未见明显异常波形，但数值通路存在明显异常，可能对应急性缺血或显著复极风险。", "advice": "立即停止活动并静卧，禁止自行驾车，尽快到心内科或急诊就医；出现胸痛、冷汗或呼吸困难立即拨打120。", "script": "数值结果提示明显风险，尽管波形未见典型危急变化，但仍需尽快由医生评估；请不要忽略胸痛、气促或异常疲劳。"},
+        ("abnormal", 0): {"title": "波形异常动态心电", "cause": f"{morphology}{numeric}提示波形异常与整体数值低危并存，可能为偶发节律变化，仍需观察其持续性。", "advice": "当天避免剧烈运动并保证充分休息，1周内预约动态心电图；若出现持续心悸、胸闷胸痛立即拨打120。", "script": "波形层面有异常心拍，但整体风险分层目前尚不是高危；建议进行动态心电监测并复查，若有胸痛或心悸请尽快就医。"},
+        ("abnormal", 1): {"title": "双通路异常就医", "cause": f"{morphology}{numeric}提示双通路异常相互印证，可能存在节律不稳并伴缺血、传导或复极风险。", "advice": "停止高强度运动并休息，24小时内尽快到心内科就诊，按医嘱复查；出现胸闷胸痛、晕厥立即拨打120。", "script": "波形和数值分析均提示异常，建议尽快就医接受专业评估，特别是若有胸闷、胸痛或晕厥等症状，应立即联系急救。"},
+        ("abnormal", 2): {"title": "立即急诊", "cause": f"{morphology}{numeric}提示双通路均为高风险信号，需警惕严重心律失常、急性缺血或复极异常。", "advice": "立即停止活动、保持静卧并呼叫急救，尽快到心内科急诊；不要等待复查，胸痛、晕厥或气促时立即拨打120。", "script": "目前双通路结果均提示高风险，建议立刻按急诊流程处理；如出现胸痛、冷汗、呼吸困难或意识变化，请立即呼叫急救。"},
+    }
+    decision = decisions.get((cnn_state, risk_num), decisions[("normal", 0)])
+    return (
+        f"建议：{decision['title']}\n"
+        f"病因分析：{decision['cause']}\n"
+        f"生活建议：{decision['advice']}\n"
+        f"医生沟通话术：{decision['script']}"
+    )
 
 
 def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, total_beats, sex="未指定", cnn_status="normal"):
@@ -278,6 +283,7 @@ def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, 
     try:
         risk_level_map = {0: "低危", 1: "中危", 2: "高危"}
         risk_level = risk_level_map.get(int(risk_num), "未知")
+        cnn_state = _normalize_cnn_status(cnn_status, abnormal_count)
 
         rules = load_suggestion_rules()
         feature_rules = rules.get("dynamic_feature_descriptions", {})
@@ -288,20 +294,8 @@ def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, 
             if value is None:
                 continue
             severity, display_text = judge_feature(name, value, DEFAULT_THRESHOLDS, sex=sex)
-            status = {
-                "正常": "正常",
-                "轻度异常": "轻度异常",
-                "显著异常": "显著异常",
-                "未检测": "未检测",
-            }.get(severity, severity)
-            detail_rows.append(
-                {
-                    "feature": name,
-                    "value": value,
-                    "severity": status,
-                    "display_text": display_text,
-                }
-            )
+            status = {"正常": "正常", "轻度异常": "轻度异常", "显著异常": "显著异常", "未检测": "未检测"}.get(severity, severity)
+            detail_rows.append({"feature": name, "value": value, "severity": status, "display_text": display_text})
             if "异常" in severity:
                 key_abnormals.append(name)
 
@@ -318,7 +312,7 @@ def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, 
         else:
             abn_level = "无"
 
-        suggestion = build_suggestion(int(risk_num), abn_level, key_abnormals, features, cnn_status=cnn_status, abnormal_count=abnormal_count, total_beats=total_beats, sex=sex)
+        suggestion = build_suggestion(int(risk_num), abn_level, key_abnormals, features, cnn_status=cnn_state, abnormal_count=abnormal_count, total_beats=total_beats, sex=sex)
 
         dynamic_descriptions = []
         for row in detail_rows:
@@ -363,9 +357,10 @@ def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, 
             "detail_rows": detail_rows,
             "suggestion": suggestion,
             "sex": sex,
+            "cnn_status": cnn_state,
         }
 
         return "success", report_text, report_data
     except Exception as exc:
         logger.error(f"generate_report 失败：{exc}")
-        return "error", f"报告生成失败：{exc}", {"risk_num": risk_num, "risk_score": risk_score, "risk_probs": list(risk_probs or [0.0, 0.0, 0.0]), "features": features, "abnormal_count": abnormal_count, "total_beats": total_beats, "sex": sex}
+        return "error", f"报告生成失败：{exc}", {"risk_num": risk_num, "risk_score": risk_score, "risk_probs": list(risk_probs or [0.0, 0.0, 0.0]), "features": features, "abnormal_count": abnormal_count, "total_beats": total_beats, "sex": sex, "cnn_status": _normalize_cnn_status(cnn_status, abnormal_count)}

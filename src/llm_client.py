@@ -52,25 +52,31 @@ def get_default_glm_model():
     return "glm-4.7-flash"
 
 
-def test_glm_connection(model_name=None):
-    api_key = get_glm_api_key()
-    if not api_key:
-        return False, "后台服务未配置，AI润色不可用"
+def resolve_api_settings(api_key=None, model=None, base_url=None):
+    effective_key = (api_key or "").strip() or get_glm_api_key()
+    effective_model = (model or "").strip() or get_default_glm_model()
+    effective_base_url = (base_url or "").strip() or GLM_API_URL
+    return effective_key, effective_model, effective_base_url
+
+
+def test_glm_connection(model_name=None, api_key=None, base_url=None):
+    effective_key, _, effective_base_url = resolve_api_settings(api_key, model_name, base_url)
+    if not effective_key:
+        return False, "未配置密钥，AI润色不可用。"
 
     target_model = model_name or get_default_glm_model()
     try:
-        _call_glm_api("请回复：连接测试正常。", model_name=target_model)
+        _call_glm_api("请回复：连接测试正常。", model_name=target_model, api_key=effective_key, base_url=effective_base_url)
         return True, "AI润色连接正常，后台代理可用。"
     except Exception as exc:
         return False, f"AI润色连接失败：{exc}"
 
 
-def _call_glm_api(prompt_text, model_name=None):
-    api_key = get_glm_api_key()
-    if not api_key:
-        raise RuntimeError("后台服务未配置，AI润色不可用")
+def _call_glm_api(prompt_text, model_name=None, api_key=None, base_url=None):
+    effective_key, request_model, request_base_url = resolve_api_settings(api_key, model_name, base_url)
+    if not effective_key:
+        return None
 
-    request_model = model_name or get_default_glm_model()
     payload = {
         "model": request_model,
         "messages": [
@@ -85,9 +91,9 @@ def _call_glm_api(prompt_text, model_name=None):
     }
 
     response = requests.post(
-        GLM_API_URL,
+        request_base_url,
         headers={
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {effective_key}",
             "Content-Type": "application/json",
         },
         data=json.dumps(payload),
@@ -109,9 +115,13 @@ def _call_glm_api(prompt_text, model_name=None):
     return str(content).strip()
 
 
-def polish_report_with_glm(report_text, model_name=None):
+def polish_report_with_glm(report_text, api_key=None, model="glm-4-flash", base_url=None):
     if not report_text or not str(report_text).strip():
         return "离线建议为空，无法进行 AI 润色。"
+
+    effective_key, _, _ = resolve_api_settings(api_key, model, base_url)
+    if not effective_key:
+        return "未配置密钥，AI润色已回退到离线建议。"
 
     prompt = (
         "请将以下离线生成的心电筛查建议润色成更自然、适合医患沟通的中文话术，"
@@ -119,4 +129,4 @@ def polish_report_with_glm(report_text, model_name=None):
         "请直接输出润色后的文本，不要解释过程。\n\n"
         f"离线建议：\n{report_text}"
     )
-    return _call_glm_api(prompt, model_name=model_name)
+    return _call_glm_api(prompt, model_name=model, api_key=api_key, base_url=base_url)
