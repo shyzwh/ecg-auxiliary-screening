@@ -3,7 +3,7 @@
 import numpy as np
 from scipy import signal
 # 相对引入
-from .logger import logger
+from src.logger import logger
 
 
 def preprocess_ecg(ecg_signal, fs):

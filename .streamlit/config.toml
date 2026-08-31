@@ -5,3 +5,6 @@ backgroundColor = "#F5F7FA"
 secondaryBackgroundColor = "#EAF0FF"
 textColor = "#1F2937"
 font = "sans serif"
+
+[server]
+favicon = "assets/favicon.png"

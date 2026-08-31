@@ -1,7 +1,7 @@
 # 读取 .atr 注释文件里的心拍类型。
 import wfdb
 import numpy as np
-from .logger import logger
+from src.logger import logger
 
 
 def load_beat_annotations(record_path):

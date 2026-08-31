@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import wfdb
 # 相对引入
-from .logger import logger
+from src.logger import logger
 
 
 def load_ecg(file_path, fs_input=None):
@@ -37,7 +37,7 @@ def load_ecg(file_path, fs_input=None):
 
 def _load_mitbih(file_path):
     """读取MIT-BIH .dat文件，需要同目录下存在对应 .hea 文件"""
-    record_name = file_path.replace(".dat", "")
+    record_name = os.path.splitext(os.fspath(file_path))[0]
     record = wfdb.rdrecord(record_name, channels=[0])
     signal = record.p_signal[:, 0]
     fs = record.fs

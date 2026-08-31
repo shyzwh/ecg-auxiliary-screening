@@ -1,9 +1,10 @@
 import wfdb
 import matplotlib.pyplot as plt
-from feature_extract import pan_tompkins
+from src.feature_extract import pan_tompkins, compute_hrv_features
+from src.config_utils import DEFAULT_CONFIG, resolve_path
 
 # 1. 读取真实MIT-BIH数据
-record_path = "D:/桌面/ECG-Auxiliary-Screening/data/mitbih/mit-bih-arrhythmia-database-1.0.0/100" # 绝对路径
+record_path = resolve_path(DEFAULT_CONFIG["data_dir"]) / "100"
 record = wfdb.rdrecord(record_path, channels=[0])
 signal = record.p_signal[:, 0]
 fs = record.fs
@@ -39,8 +40,6 @@ plt.show()
 print(f"采样率：{fs} Hz")
 print(f"前30秒检测到R峰数量：{len(r_peaks)}")
 print(f"估算心率：{len(r_peaks) / duration * 60:.1f} bpm")
-
-from feature_extract import compute_hrv_features
 
 hrv_features = compute_hrv_features(r_peaks, fs)
 print("hrv特征：")

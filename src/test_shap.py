@@ -1,5 +1,5 @@
 print("SHAP测试开始")
-from .inference import explain_with_shap
+from src.inference import explain_with_shap
 
 features = {
     "HR": 75.48,

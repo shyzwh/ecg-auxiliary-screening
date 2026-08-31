@@ -2,9 +2,9 @@ import wfdb
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+from src.config_utils import DEFAULT_CONFIG, resolve_path
 
-# ========== 使用绝对路径！把路径改成电脑上真实路径 ==========
-data_path = r"D:\桌面\ECG-Auxiliary-Screening\data\mitbih\mit-bih-arrhythmia-database-1.0.0\100"
+data_path = resolve_path(DEFAULT_CONFIG["data_dir"]) / "100"
 record = wfdb.rdrecord(data_path, channels=[0])
 annotation = wfdb.rdann(data_path, 'atr')
 

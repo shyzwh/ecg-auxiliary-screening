@@ -1,6 +1,6 @@
 # 根据R峰位置，把心电信号切成一个个固定长度的心拍。
 import numpy as np
-from .logger import logger
+from src.logger import logger
 
 
 def segment_beats(ecg_signal, r_peaks, fs, before=0.25, after=0.45):

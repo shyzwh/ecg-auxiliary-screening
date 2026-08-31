@@ -5,8 +5,7 @@
 # 对R峰过少、信号太短都做了判断。
 
 import numpy as np
-# 相对引入
-from .logger import logger
+from src.logger import logger
 
 
 def pan_tompkins(ecg_signal, fs):

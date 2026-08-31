@@ -1,8 +1,8 @@
 # 用CNN对新数据做预测
 import numpy as np
 from tensorflow import keras
-from .beat_segmenter import segment_beats
-from .logger import logger
+from src.beat_segmenter import segment_beats
+from src.logger import logger
 
 
 def predict_abnormal_beats(signal, r_peaks, fs, model_path="models/cnn_model.h5"):

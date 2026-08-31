@@ -8,10 +8,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
 
-from .data_loader import load_ecg
-from .preprocess import preprocess_ecg
-from .feature_extract import pan_tompkins, extract_all_features
-from .inference import rule_based_inference
+from src.data_loader import load_ecg
+from src.preprocess import preprocess_ecg
+from src.feature_extract import pan_tompkins, extract_all_features
+from src.inference import rule_based_inference
+from src.config_utils import DEFAULT_CONFIG, resolve_path
 
 
 FEATURE_ORDER = [
@@ -20,12 +21,14 @@ FEATURE_ORDER = [
 ]
 
 
-def build_training_data(record_ids):
+def build_training_data(record_ids, data_dir=None):
     """读取多条MIT-BIH记录，提取特征，并用规则打风险标签"""
     all_rows = []
 
+    data_dir = resolve_path(data_dir or DEFAULT_CONFIG["data_dir"])
+
     for rid in record_ids:
-        file_path = f"D:/桌面/ECG-Auxiliary-Screening/data/mitbih/mit-bih-arrhythmia-database-1.0.0/{rid}.dat"
+        file_path = data_dir / f"{rid}.dat"
 
         status, signal, fs, msg = load_ecg(file_path)
         if status != "success":
@@ -77,7 +80,7 @@ def main():
 
     print("开始构建训练数据...")
     df = build_training_data(record_ids)
-    df.to_csv("training_data.csv", index=False)
+    df.to_csv(resolve_path("training_data.csv"), index=False)
     print(f"训练数据已保存，共{len(df)}条")
 
     X = df[FEATURE_ORDER]
@@ -115,9 +118,11 @@ def main():
     print(pd.Series(y).value_counts())
 
     # 保存模型和标准化器
-    os.makedirs("models", exist_ok=True)
-    model.save_model("models/ecg_risk_xgb_model.json")
-    joblib.dump(scaler, "models/ecg_scaler.pkl")
+    model_path = resolve_path(DEFAULT_CONFIG["model_path"])
+    scaler_path = resolve_path(DEFAULT_CONFIG["scaler_path"])
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    model.save_model(model_path)
+    joblib.dump(scaler, scaler_path)
 
     print("\n模型已保存到 models/ecg_risk_xgb_model.json")
     print("标准化器已保存到 models/ecg_scaler.pkl")
