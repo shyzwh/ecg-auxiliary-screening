@@ -21,7 +21,7 @@ import xgboost as xgb
 
 st.set_page_config(
     page_title="心电风险辅助筛查系统",
-    page_icon="static/logo.jpg",  # 改这里
+    page_icon="assets/favicon.jpg",
     layout="wide"
 )
 
