@@ -33,7 +33,11 @@ from src.ui_components import (
     render_upload_card,
 )
 
-st.set_page_config(page_title="ECG辅助筛查", layout="wide")
+st.set_page_config(
+    page_title="ECG辅助筛查",
+    page_icon="assets/favicon.jpg",
+    layout="wide"
+)
 
 APP_VERSION = "v2.0.0"
 RISK_COLORS = {"低危": "#52c41a", "中危": "#faad14", "高危": "#ff4d4f"}
