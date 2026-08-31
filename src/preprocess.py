@@ -6,30 +6,46 @@ from scipy import signal
 from src.logger import logger
 
 
+def _sanitize_signal(ecg_signal):
+    arr = np.asarray(ecg_signal, dtype=float).reshape(-1)
+    if arr.size == 0:
+        return arr, False
+    arr = np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
+    if not np.isfinite(arr).all():
+        arr = np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
+    if arr.size < 10 or np.max(np.abs(arr)) < 1e-8:
+        return arr, False
+    return arr, True
+
+
 def preprocess_ecg(ecg_signal, fs):
     """
     对心电信号进行标准化预处理。
     返回：clean_signal
     """
-    if len(ecg_signal) < 10:
-        return "error", None, "信号太短，无法预处理"
+    if ecg_signal is None:
+        return "error", None, "信号为空，无法预处理"
+
+    signal_array, valid = _sanitize_signal(ecg_signal)
+    if not valid:
+        return "error", None, "信号噪声过大或心跳过少，建议更换数据"
 
     try:
-        # 1. 自动工频陷波
-        notch_freq = _detect_notch_freq(ecg_signal, fs)
+        notch_freq = _detect_notch_freq(signal_array, fs)
         if notch_freq is not None:
-            ecg_signal = _notch_filter(ecg_signal, fs, notch_freq)
+            signal_array = _notch_filter(signal_array, fs, notch_freq)
 
-        # 2. 带通滤波 0.5-40Hz
-        ecg_signal = _bandpass_filter(ecg_signal, fs, 0.5, 40.0)
+        signal_array = _bandpass_filter(signal_array, fs, 0.5, 40.0)
+        signal_array = signal.medfilt(signal_array, kernel_size=3)
+        signal_array = _baseline_correction(signal_array)
+        signal_array = np.nan_to_num(signal_array, nan=0.0, posinf=0.0, neginf=0.0)
 
-        # 3. 中值滤波去尖峰
-        ecg_signal = signal.medfilt(ecg_signal, kernel_size=3)
+        if signal_array.size < 10:
+            return "error", None, "信号太短，无法预处理"
+        if np.max(np.abs(signal_array)) < 1e-8:
+            return "error", None, "信号质量过差，建议更换数据"
 
-        # 4. 基线校正
-        ecg_signal = _baseline_correction(ecg_signal)
-
-        return "success", ecg_signal, "预处理完成"
+        return "success", signal_array, "预处理完成"
     except Exception as e:
         logger.error(f"预处理失败：{e}")
         return "error", None, f"预处理失败：{e}"
