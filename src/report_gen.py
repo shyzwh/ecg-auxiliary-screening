@@ -24,6 +24,7 @@ FEATURE_ORDER = [
 ]
 
 
+# 根据系统字体可用性注册中文PDF字体
 def _register_pdf_font():
     font_candidates = [
         os.path.join(os.environ.get("WINDIR", "C:/Windows"), "Fonts", "Deng.ttf"),
@@ -39,6 +40,7 @@ def _register_pdf_font():
     return "Helvetica"
 
 
+# 生成PDF所需的波形和SHAP图片
 def _pdf_plot_images(result, font_name):
     matplotlib.rcParams["font.sans-serif"] = ["DengXian", "DejaVu Sans"]
     matplotlib.rcParams["axes.unicode_minus"] = False
@@ -88,8 +90,8 @@ def _pdf_plot_images(result, font_name):
     return images
 
 
+# 根据结果数据生成中文PDF报告
 def generate_pdf_report(result):
-    """生成包含波形、SHAP和结构化建议的中文PDF报告。"""
     try:
         font_name = _register_pdf_font()
         styles = getSampleStyleSheet()
@@ -147,8 +149,8 @@ def generate_pdf_report(result):
         return "error", None, f"PDF报告生成失败：{error}"
 
 
+# 加载动态建议规则配置
 def load_suggestion_rules(suggestions_path="config/suggestions.json"):
-    # 读取现有建议配置文件并保留原有6条基础规则，新增动态特征描述扩展字段。
     try:
         file_path = Path(suggestions_path)
         if not file_path.exists():
@@ -164,8 +166,8 @@ def load_suggestion_rules(suggestions_path="config/suggestions.json"):
         return {"rules": [], "dynamic_feature_descriptions": {}}
 
 
+# 格式化特征值为自然语言描述
 def _format_value_for_description(name, value):
-    # 将真实特征值格式化为自然语言中的数值，便于生成针对性建议语句。
     if value is None:
         return "未知"
     if name in {"ST_shift", "P_amp", "T_amp"}:
@@ -173,8 +175,8 @@ def _format_value_for_description(name, value):
     return f"{float(value):.2f}"
 
 
+# 根据异常特征值生成动态描述
 def build_dynamic_feature_description(feature_name, value, feature_rules=None):
-    # 根据真实异常特征值生成针对性描述，如 ST_shift=-0.15 时输出临床提示。
     if feature_rules is None:
         feature_rules = {}
     template = feature_rules.get(feature_name) or feature_rules.get("default", "检测到{feature}异常，建议结合临床症状复核。")
@@ -194,8 +196,8 @@ def build_dynamic_feature_description(feature_name, value, feature_rules=None):
     return template.format(feature=feature_name, value=_format_value_for_description(feature_name, value))
 
 
+# 根据阈值判断特征状态
 def judge_feature(name, value, thresholds, sex=""):
-    # 复用现有规则阈值，保留原有6条建议逻辑并输出标准化异常判断。
     if value is None:
         return "未检测", "未检测"
     t = thresholds.get(name, {})
@@ -236,8 +238,8 @@ def judge_feature(name, value, thresholds, sex=""):
     return "正常", f"{value}{unit}"
 
 
+# 归一化CNN状态为正常或异常
 def _normalize_cnn_status(cnn_status, abnormal_count=0):
-    """统一 CNN 状态为 normal/abnormal。"""
     if cnn_status is None:
         return "normal"
     raw = str(cnn_status).lower()
@@ -250,8 +252,8 @@ def _normalize_cnn_status(cnn_status, abnormal_count=0):
     return "normal"
 
 
+# 处理CNN状态与风险等级组合
 def build_suggestion(risk_num, abn_level, key_abnormals, features=None, cnn_status="normal", abnormal_count=0, total_beats=0, sex="未指定"):
-    """综合形态通路和数值通路生成病因分析、生活建议和医生沟通话术。"""
     features = features or {}
     cnn_state = _normalize_cnn_status(cnn_status, abnormal_count)
     risk_num = int(risk_num)
@@ -278,8 +280,8 @@ def build_suggestion(risk_num, abn_level, key_abnormals, features=None, cnn_stat
     )
 
 
+# 根据风险结果生成中文说明性报告
 def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, total_beats, sex="未指定", cnn_status="normal"):
-    """生成说明性报告文本，供 app.py 在分析页面直接展示。"""
     try:
         risk_level_map = {0: "低危", 1: "中危", 2: "高危"}
         risk_level = risk_level_map.get(int(risk_num), "未知")

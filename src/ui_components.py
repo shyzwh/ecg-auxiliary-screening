@@ -3,11 +3,12 @@
 import streamlit as st
 
 
+# 注入全局样式，包含毛玻璃卡片、医疗蓝主题、悬停效果
 def inject_global_css():
-    """注入全局医疗蓝主题样式，包含毛玻璃卡片和悬停效果。"""
     st.markdown(
         """
         <style>
+        /* 定义医疗蓝色系与通用主题颜色 */
         :root {
             --medical-blue: #1677ff;
             --medical-deep: #0b2d7a;
@@ -29,6 +30,7 @@ def inject_global_css():
         [data-testid="stAppViewContainer"] > .main { background: transparent; }
         [data-testid="stSidebar"] { background: linear-gradient(180deg, #0d63d6 0%, #0a4aad 100%); }
         [data-testid="stSidebar"] * { color: white; }
+        /* 定义毛玻璃卡片样式 */
         .glass-panel {
             background: var(--glass-bg);
             backdrop-filter: blur(18px);
@@ -45,6 +47,7 @@ def inject_global_css():
             transform: translateY(-2px);
             box-shadow: 0 18px 35px rgba(15, 90, 170, 0.16);
         }
+        /* 定义分节标题样式 */
         .section-title {
             color: var(--medical-deep);
             font-size: 1.08rem;
@@ -108,8 +111,8 @@ def inject_global_css():
     )
 
 
+# 渲染患者信息卡片
 def render_patient_card(patient_name="未命名患者", age="未录入", sex="未指定"):
-    """渲染患者信息卡片。"""
     st.markdown(
         f"""
         <div class="glass-panel" style="min-height:0;">
@@ -123,8 +126,8 @@ def render_patient_card(patient_name="未命名患者", age="未录入", sex="�
     )
 
 
+# 渲染上传卡片
 def render_upload_card():
-    """渲染上传卡片。"""
     st.markdown(
         """
         <div class="glass-panel" style="min-height:0;">
@@ -138,8 +141,8 @@ def render_upload_card():
     return uploaded, demo
 
 
+# 渲染风险等级徽章
 def render_risk_badge(level="低危", value=None):
-    """按风险等级渲染彩色标签。"""
     level_map = {
         "低危": ("#2ecc71", "低危"),
         "中危": ("#f39c12", "中危"),
@@ -152,14 +155,14 @@ def render_risk_badge(level="低危", value=None):
     st.markdown(f'<span class="risk-badge" style="background:linear-gradient(135deg,{color},#183b63);">{text}</span>', unsafe_allow_html=True)
 
 
+# 渲染指标卡片
 def render_metric_card(label="指标", value="--", unit=""):
-    """渲染指标卡片。"""
     st.markdown(
         f'<div class="metric-card"><div class="metric-label">{label}</div><div class="metric-value">{value}</div><div class="metric-subtext">{unit}</div></div>',
         unsafe_allow_html=True,
     )
 
 
+# 渲染分节标题
 def render_section_title(text="分节标题"):
-    """渲染分节标题。"""
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)

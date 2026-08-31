@@ -1,19 +1,19 @@
 # 用CNN对新数据做预测
 import numpy as np
 from tensorflow import keras
+
 from src.beat_segmenter import segment_beats
 from src.logger import logger
 
 
 def predict_abnormal_beats(signal, r_peaks, fs, model_path="models/cnn_model.h5"):
-    """用训练好的CNN模型，预测哪些心拍异常"""
+    # CNN推理：输入信号和R峰，输出异常心拍位置
     try:
-        # 1. 切分心拍
+        model_path = str(model_path).replace("\\", "/")
         status, beats, positions, _ = segment_beats(signal, r_peaks, fs)
         if status != "success":
             return "error", None, "心拍切分失败"
 
-        # 2. 加载模型
         model = keras.models.load_model(model_path)
 
         # 3. 整理输入格式

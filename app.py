@@ -1,8 +1,11 @@
-﻿import datetime
+﻿"""ECG辅助筛查主应用，负责上传、分析、历史和报告管理。"""
+
+import datetime
 import html
 import json
 import os
 import uuid
+from pathlib import Path
 
 import joblib
 import matplotlib.pyplot as plt
@@ -50,12 +53,14 @@ DEFAULT_UI_CONFIG = {
 }
 
 
+# 初始化配置项
 def normalize_config(config):
     result = DEFAULT_UI_CONFIG.copy()
     result.update(config or {})
     return result
 
 
+# 初始化分析状态
 def init_state():
     defaults = {
         "analysis_result": None,
@@ -78,6 +83,7 @@ def init_state():
         st.session_state.setdefault(key, value)
 
 
+# 脱敏处理患者姓名
 def mask_name(name):
     raw = str(name or "").strip()
     if not raw:
@@ -89,6 +95,7 @@ def mask_name(name):
     return raw[0] + "**"
 
 
+# 校验患者基本信息
 def validate_patient_info(name, age, sex):
     if name is not None and len(str(name).strip()) > 50:
         return False, "姓名不能超过 50 个字符。"
@@ -101,6 +108,7 @@ def validate_patient_info(name, age, sex):
     return True, "ok"
 
 
+# 获取当前患者画像
 def get_patient_profile():
     return {
         "name": st.session_state.get("patient_name", ""),
@@ -113,11 +121,14 @@ def get_patient_profile():
     }
 
 
+# 保存患者信息到会话状态
 def save_patient_profile():
     st.session_state["patient_profile"] = get_patient_profile()
 
 
+# 加载历史记录列表
 def load_history(path):
+    path = str(path).replace("\\", "/")
     if not os.path.exists(path):
         return []
     try:
@@ -128,12 +139,15 @@ def load_history(path):
         return []
 
 
+# 保存历史记录到JSON文件
 def save_history(records, path):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    path = str(path).replace("\\", "/")
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(records, handle, ensure_ascii=False, indent=2)
 
 
+# 渲染侧边栏导航
 def render_sidebar():
     with st.sidebar:
         st.markdown("# ♥ 心电筛查")
@@ -150,6 +164,7 @@ def render_sidebar():
     return page
 
 
+# 渲染页面标题栏
 def render_header(page, config):
     st.markdown(
         """
@@ -162,12 +177,14 @@ def render_header(page, config):
     )
 
 
+# 计算三级风险概率
 def risk_probabilities(features, config, risk_num, score):
     try:
         model = xgb.XGBClassifier()
-        model.load_model(config["model_path"])
+        model_path = str(config["model_path"]).replace("\\", "/")
+        model.load_model(model_path)
         arr = np.array([[features[name] for name in FEATURE_ORDER]], dtype=float)
-        scaler_path = config.get("scaler_path", "models/ecg_scaler.pkl")
+        scaler_path = str(config.get("scaler_path", "models/ecg_scaler.pkl")).replace("\\", "/")
         if os.path.exists(scaler_path):
             arr = joblib.load(scaler_path).transform(arr)
         probs = model.predict_proba(arr)[0]
@@ -178,6 +195,7 @@ def risk_probabilities(features, config, risk_num, score):
         return fallback
 
 
+# 执行完整心电分析流程
 def run_analysis(file_path, file_name, config):
     progress = st.progress(0, text="准备开始分析")
     labels = ["上传中", "预处理中", "特征提取中", "CNN 推理中", "XGBoost 推理中", "SHAP 分析中", "生成报告中"]
@@ -260,6 +278,7 @@ def run_analysis(file_path, file_name, config):
     }, "分析完成"
 
 
+# 设置绘图布局样式
 def plot_layout(fig, height=360):
     fig.update_layout(
         height=height,
@@ -274,6 +293,7 @@ def plot_layout(fig, height=360):
     return fig
 
 
+# 渲染单导联心电波形
 def render_waveform(result):
     signal = np.asarray(result["signal"], dtype=float)
     fs = float(result.get("fs", 1) or 1)
@@ -290,6 +310,7 @@ def render_waveform(result):
     st.plotly_chart(plot_layout(fig, 420), use_container_width=True)
 
 
+# 渲染特征指标卡片
 def render_feature_card(name, value, severity):
     card_bg = "rgba(255, 235, 238, 0.75)" if "异常" in severity else "rgba(255,255,255,0.8)"
     text_color = "#b42318" if "异常" in severity else "#18324f"
@@ -299,6 +320,7 @@ def render_feature_card(name, value, severity):
     )
 
 
+# 渲染临床特征分组
 def render_clinical_feature_groups(result):
     from src.report_gen import judge_feature, DEFAULT_THRESHOLDS
 
@@ -319,6 +341,7 @@ def render_clinical_feature_groups(result):
         st.markdown("---")
 
 
+# 渲染报告分段块
 def render_report_section(title, body, bg_color="#f5f7ff", text_color="#18324f"):
     st.markdown(
         f"<div style='background:{bg_color};padding:1rem 1.2rem;border-radius:16px;border:1px solid rgba(24,50,79,0.08);color:{text_color};margin:0.7rem 0 1rem 0;'><div style='font-size:1.05rem;font-weight:800;margin-bottom:0.5rem;'>{title}</div><div style='white-space:pre-wrap;line-height:1.8;'>{html.escape(body)}</div></div>",
@@ -326,6 +349,7 @@ def render_report_section(title, body, bg_color="#f5f7ff", text_color="#18324f")
     )
 
 
+# 渲染心电分析页面
 def analysis_page(config):
     st.title("心电分析")
     st.caption("上传单导联 ECG，完成预处理、双通路分析与可解释报告生成。所有患者数据仅保存在本地，不会对外上传。")
@@ -351,11 +375,12 @@ def analysis_page(config):
         render_patient_card(mask_name(st.session_state.get("patient_name", "")), st.session_state.get("patient_age", 0), st.session_state.get("patient_sex", "未指定"))
         uploaded, demo = render_upload_card()
         if demo:
-            st.session_state["selected_file"] = (os.path.join("uploads", "100_30s.csv"), "100_30s.csv（示例）")
+            st.session_state["selected_file"] = (os.path.join("uploads", "100_30s.csv").replace("\\", "/"), "100_30s.csv（示例）")
         elif uploaded is not None:
             file_name = os.path.basename(uploaded.name)
             file_path = os.path.join(config.get("upload_dir", "uploads"), file_name)
-            os.makedirs(config.get("upload_dir", "uploads"), exist_ok=True)
+            file_path = file_path.replace("\\", "/")
+            Path(file_path).parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "wb") as handle:
                 handle.write(uploaded.getbuffer())
             st.session_state["selected_file"] = (file_path, file_name)
@@ -558,6 +583,7 @@ def analysis_page(config):
                 st.success("已保存到历史记录")
 
 
+# 渲染历史记录卡片
 def render_patient_history_cards(records):
     grouped = {}
     for item in records:
@@ -598,6 +624,7 @@ def render_patient_history_cards(records):
                     st.rerun()
 
 
+# 渲染历史记录页面
 def history_page(config):
     records = load_history(config.get("storage_path", "storage/records.json"))
     st.title("历史记录")
@@ -640,6 +667,7 @@ def history_page(config):
                             st.warning("再次点击确认删除。")
 
 
+# 渲染系统设置页面
 def settings_page(config):
     st.title("系统设置")
     with st.form("settings_form"):
@@ -693,8 +721,9 @@ def settings_page(config):
             st.rerun()
 
 
+# 渲染病例教学页面
 def cases_page():
-    cases_path = os.path.join(os.getcwd(), "config", "cases.json")
+    cases_path = os.path.join(os.getcwd(), "config", "cases.json").replace("\\", "/")
     if not os.path.exists(cases_path):
         st.warning("未找到案例数据文件 config/cases.json")
         return
@@ -719,8 +748,9 @@ def cases_page():
     st.write(selected.get("treatment_advice", ""))
 
 
+# 渲染病情统计页面
 def statistics_page():
-    records_path = os.path.join(os.getcwd(), "storage", "records.json")
+    records_path = os.path.join(os.getcwd(), "storage", "records.json").replace("\\", "/")
     records = load_history(records_path)
     st.title("病情统计")
     if not records:
@@ -735,12 +765,14 @@ def statistics_page():
     st.plotly_chart(plot_layout(pie, 300), use_container_width=True)
 
 
+# 渲染项目说明页面
 def about_page():
     st.title("关于项目")
     st.markdown("本系统面向基层医护人员，支持单导联 ECG 风险辅助筛查、双通路推理和可解释分析，不替代执业医师诊断。")
     st.warning("所有患者数据仅保存在本地，不会对外上传。")
 
 
+# 执行主程序入口
 def main():
     inject_global_css()
     init_state()

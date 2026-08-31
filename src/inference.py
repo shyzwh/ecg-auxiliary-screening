@@ -1,14 +1,15 @@
-# 接收12项特征，优先用XGBoost模型推理。如果模型不存在，就用规则兜底，保证系统永远能出结果。
+# 接收12项特征，优先用XGBoost模型推理。如果模型不存在，就用规则兜底。
 
-import os
 import json
-import pandas as pd
-import numpy as np
+import os
+
 import joblib
+import numpy as np
+import pandas as pd
 import xgboost as xgb
-# 相对引入
-from .logger import logger
+
 from .config_utils import DEFAULT_CONFIG
+from .logger import logger
 
 
 FEATURE_ORDER = [
@@ -18,8 +19,9 @@ FEATURE_ORDER = [
 
 
 def load_risk_model(model_path):
-    """加载XGBoost模型和标准化器"""
+    # 加载XGBoost模型和标准化器
     try:
+        model_path = str(model_path).replace("\\", "/")
         if not os.path.exists(model_path):
             return "error", None, None, "模型文件不存在"
 
@@ -27,6 +29,7 @@ def load_risk_model(model_path):
         model.load_model(model_path)
 
         scaler_path = model_path.replace("ecg_risk_xgb_model.json", "ecg_scaler.pkl")
+        scaler_path = scaler_path.replace("\\", "/")
         if os.path.exists(scaler_path):
             scaler = joblib.load(scaler_path)
         else:
@@ -100,12 +103,7 @@ def rule_based_inference(features, config=None, sex=""):
 
 
 def predict_risk(features, model_path="models/ecg_risk_xgb_model.json", config=None, sex=""):
-    """
-    总推理入口。
-    优先用XGBoost模型，模型不存在时用规则兜底。
-    返回：status, risk_level, risk_num, score, msg
-    """
-    # 先尝试加载模型
+    # 输入12项特征，输出三级风险
     status, model, scaler, _ = load_risk_model(model_path)
 
     if status == "success":
@@ -131,10 +129,11 @@ def predict_risk(features, model_path="models/ecg_risk_xgb_model.json", config=N
 
 # SHAP
 def explain_with_shap(features, model_path="models/ecg_risk_xgb_model.json"):
-    """用SHAP解释XGBoost对当前样本的决策"""
+    # 使用TreeExplainer生成特征贡献
     try:
         import shap
 
+        model_path = str(model_path).replace("\\", "/")
         status, model, scaler, _ = load_risk_model(model_path)
         if status != "success":
             return "error", None, "模型不可用，无法进行SHAP解释"
