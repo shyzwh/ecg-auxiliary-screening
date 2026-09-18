@@ -151,31 +151,13 @@ def polish_report_with_glm(report_text, api_key=None, model="glm-4-flash", base_
     if not effective_key:
         return "未配置密钥，AI润色已回退到离线建议。"
 
-    report = str(report_text)
-    risk_match = re.search(r"风险分级：([^\n]+)", report)
-    risk_level = risk_match.group(1).strip() if risk_match else "暂无明确风险等级"
-    abnormal_lines = []
-    feature_section = report.split("关键特征判读：", 1)[-1].split("特征增强描述：", 1)[0]
-    for line in feature_section.splitlines():
-        if "异常" in line and ("轻度" in line or "显著" in line):
-            abnormal_lines.append(line.strip().lstrip("- "))
-    abnormal_features = "；".join(abnormal_lines) or "未发现需要特别强调的异常特征"
-    advice = report.split("综合建议：", 1)[-1].strip() if "综合建议：" in report else report
     prompt = (
-        "请把以下内容润色为更通俗的版本，分4段：风险结论/病因分析/生活建议/医生话术。"
-        "每段30-80字，总字数200-350字。保留异常特征的名称、数值和判定，以及原始建议中的实质内容。"
-        "不要罗列全部12项特征，只讲异常项；不要输出空泛的‘请结合具体参数评估’，不要重复罗列特征数值。\n\n"
-        f"风险等级：{risk_level}\n"
-        f"异常特征：{abnormal_features}\n"
-        f"原始建议：{advice}"
+        "请将以下离线生成的心电筛查建议润色成更自然、适合医患沟通的中文话术，"
+        "保留医学事实与风险提醒，不扩充新的诊断结论，不加入无法确认的内容。"
+        "请直接输出润色后的文本，不要解释过程。\n\n"
+        f"离线建议：\n{report_text}"
     )
-    return _call_glm_api(
-        prompt,
-        model_name=model,
-        api_key=api_key,
-        base_url=base_url,
-        system_prompt="你是心内科医生助手。请把以下报告润色为更通俗的版本。",
-    )
+    return _call_glm_api(prompt, model_name=model, api_key=api_key, base_url=base_url)
 
 
 def _json_safe(value):
@@ -240,13 +222,9 @@ def generate_ai_diagnosis(analysis_result, api_key=None, model=None, base_url=No
             "offline_report": analysis_result.get("report_data", {}),
         }
         prompt = (
-            "请基于分析结果，给出一份简短的‘第二意见’，面向基层医护人员和患者。\n"
-            "正文只围绕三个段落组织：第1段说明最关键的1-2个发现（不是全部特征）；"
-            "第2段说明这些发现可能意味着什么；第3段说明建议采取的行动。总字数200-300字，"
-            "不要罗列所有12项特征，不要把辅助筛查结果写成确诊，不要虚构症状或检查。"
-            "将这三段分别放入risk_summary、etiology_analysis、lifestyle_advice字段；"
-            "shap_interpretation只写一句关键归因，emergency_warning只写一句必要的紧急提示，"
-            "feature_explanations只保留最关键的1-2项。\n"
+            "请根据下面完整的心电筛查结果，生成结构化的中文诊断解读。\n"
+            "要求：面向基层医护人员和患者，先说结论再解释原因；把数值异常与SHAP贡献分别说明；"
+            "不得把辅助筛查结果写成确诊，不得虚构未提供的症状或检查；紧急提示必须明确触发条件。\n"
             "只返回合法JSON对象，不要Markdown代码块，不要额外说明。JSON字段必须严格包含："
             "risk_summary（字符串）、etiology_analysis（字符串）、feature_explanations（数组，"
             "每项含feature、value、explanation）、shap_interpretation（字符串）、"
@@ -259,7 +237,7 @@ def generate_ai_diagnosis(analysis_result, api_key=None, model=None, base_url=No
             api_key=api_key,
             base_url=base_url,
             timeout=30,
-            system_prompt="你是心内科医生助手。请基于分析结果，给出一份简短的‘第二意见’。",
+            system_prompt="你是心内科医生助手，擅长用通俗语言解释心电图结果，避免使用专业术语，面向基层医护人员和患者。",
         )
         parsed = _parse_json_response(content)
         required = {"risk_summary", "etiology_analysis", "feature_explanations", "shap_interpretation", "lifestyle_advice", "emergency_warning"}

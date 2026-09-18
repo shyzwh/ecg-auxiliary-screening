@@ -15,7 +15,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 import xgboost as xgb
-from scipy.interpolate import make_interp_spline
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -484,7 +483,7 @@ def render_patient_history_cards(records):
                     if row.get("风险等级") in {"中危", "高危"}:
                         tags.append(row["风险等级"])
                 with st.container(border=True):
-                    st.markdown(f"### {mask_name(name)}")
+                    render_section_title(mask_name(name), "👤")
                     st.caption(f"记录数：{len(series)} · 最近时间：{latest.get('时间', '暂无数据')}")
                     render_risk_badge(risk)
                     if tags:
@@ -527,20 +526,15 @@ def history_page(config):
                 risk = row.get("风险等级", "未知")
                 score = float(row.get("风险评分", 0) or 0)
                 with st.container(border=True):
-                    header_cols = st.columns([2, 1])
-                    with header_cols[0]:
-                        st.markdown(f"**{row.get('时间', '暂无日期')} · {row.get('文件名', '暂无文件名')}**")
-                    with header_cols[1]:
-                        render_risk_badge(risk, score)
-                    feature_values = row.get("特征") if isinstance(row.get("特征"), dict) else {}
-                    hr = feature_values.get("HR", "暂无数据")
-                    abnormal_count = row.get("异常心拍数", "暂无数据")
-                    st.markdown(f"**关键指标**　心率：{hr}　异常心拍数：{abnormal_count}")
+                    render_section_title(f"{row.get('时间', '暂无日期')} · {row.get('文件名', '暂无文件名')}", "◷")
+                    render_risk_badge(risk, score)
                     if row.get("备注"):
                         st.caption(f"备注：{row.get('备注')}")
-                    report_text = row.get("报告", "") or "暂无报告"
-                    st.markdown("**完整报告**")
-                    st.markdown(report_text)
+                    if row.get("特征"):
+                        feature_df = pd.DataFrame([row["特征"]]).T.reset_index().rename(columns={"index": "特征", 0: "数值"})
+                        st.dataframe(feature_df, use_container_width=True, hide_index=True)
+                    report_text = row.get("报告", "") or ""
+                    st.markdown(f'<div class="report-box">{html.escape(report_text)}</div>', unsafe_allow_html=True)
                     st.download_button("导出报告", report_text, "心电筛查历史报告.txt", "text/plain", key=f"download_{record_id}", use_container_width=True)
                     if st.button("删除该记录", key=f"delete_record_{record_id}", use_container_width=True):
                         if st.session_state.get(f"delete_confirm_{record_id}"):
@@ -563,9 +557,7 @@ def settings_page(config):
             c1, c2, c3 = st.columns(3)
             medium = c1.number_input("中危阈值", 0.0, 1.0, float(config.get("risk_threshold_medium", 0.4)), 0.05)
             high = c2.number_input("高危阈值", 0.0, 1.0, float(config.get("risk_threshold_high", 0.7)), 0.05)
-            theme_options = ["医疗蓝", "清新绿", "暖阳橙"]
-            current_theme = config.get("theme", "医疗蓝")
-            theme = c3.selectbox("主题", theme_options, index=theme_options.index(current_theme) if current_theme in theme_options else 0)
+            theme = c3.selectbox("主题", ["医疗蓝", "浅色", "深色"], index=["医疗蓝", "浅色", "深色"].index(config.get("theme", "医疗蓝")))
 
         with st.container(border=True):
             render_section_title("模型路径", "◉")
@@ -609,7 +601,6 @@ def settings_page(config):
                 "cnn_model_path": cnn_model_path,
                 "show_shap": show_shap,
             })
-            st.session_state["theme"] = theme
             save_config(config)
             st.success("设置保存成功")
             st.rerun()
@@ -704,15 +695,15 @@ def statistics_page():
     render_section_title("患者摘要", "▥")
     summary_cols = st.columns(4)
     with summary_cols[0]:
-        render_ui_stat_card("总筛查人数", len(unique_patients), "人")
+        render_ui_stat_card("总筛查人数", len(unique_patients), "人", "👥")
     with summary_cols[1]:
-        render_ui_stat_card("高危数", risk_counts["高危"], "例")
+        render_ui_stat_card("高危数", risk_counts["高危"], "例", "🏥")
     with summary_cols[2]:
-        render_ui_stat_card("平均年龄", f"{sum(ages) / len(ages):.1f}" if ages else "暂无数据", "岁")
+        render_ui_stat_card("平均年龄", f"{sum(ages) / len(ages):.1f}" if ages else "暂无数据", "岁", "◷")
     total_sex = sex_counts["男"] + sex_counts["女"]
     sex_ratio = f"{sex_counts['男']} : {sex_counts['女']}" if total_sex else "暂无数据"
     with summary_cols[3]:
-        render_ui_stat_card("男女比例", sex_ratio, "男 : 女")
+        render_ui_stat_card("男女比例", sex_ratio, "男 : 女", "⚥")
 
     render_section_title("高危病例", "!")
     render_ui_info_card("高危病例列表", "姓名已脱敏，关键异常特征由阈值规则判读。", "▤")
@@ -762,27 +753,8 @@ def statistics_page():
     trend_frame = pd.DataFrame(trend_rows).groupby(["日期", "风险等级"]).size().reset_index(name="筛查次数")
     render_section_title("筛查趋势", "↗")
     if not trend_frame.empty:
-        trend_fig = go.Figure()
-        for risk_level, group in trend_frame.groupby("风险等级"):
-            dated = group[group["日期"] != "暂无日期"].copy()
-            dated["日期"] = pd.to_datetime(dated["日期"], errors="coerce")
-            dated = dated.dropna(subset=["日期"]).sort_values("日期")
-            color = RISK_COLORS.get(risk_level, "#6c757d")
-            if len(dated) >= 3:
-                origin = dated["日期"].min()
-                x = (dated["日期"] - origin).dt.total_seconds().to_numpy() / 86400.0
-                y = dated["筛查次数"].to_numpy(dtype=float)
-                x_smooth = np.linspace(x.min(), x.max(), 100)
-                spline = make_interp_spline(x, y, k=min(3, len(x) - 1))
-                y_smooth = spline(x_smooth)
-                date_smooth = origin + pd.to_timedelta(x_smooth, unit="D")
-                trend_fig.add_trace(go.Scatter(x=date_smooth, y=y_smooth, mode="lines", name=risk_level, line=dict(color=color)))
-                trend_fig.add_trace(go.Scatter(x=dated["日期"], y=dated["筛查次数"], mode="markers", name=f"{risk_level}数据", marker=dict(color=color), showlegend=False))
-            else:
-                trend_fig.add_trace(go.Scatter(x=dated["日期"], y=dated["筛查次数"], mode="lines+markers", name=risk_level, line=dict(color=color)))
-        if (trend_frame["日期"] == "暂无日期").any():
-            trend_fig.add_annotation(text="含暂无日期记录", xref="paper", x=1, yref="paper", y=1.08, showarrow=False)
-        trend_fig.update_layout(xaxis_title="日期", yaxis_title="筛查次数")
+        trend_fig = px.line(trend_frame, x="日期", y="筛查次数", color="风险等级", markers=True, color_discrete_map=RISK_COLORS)
+        trend_fig.update_traces(line_shape="spline", line_smoothing=1.3)
         render_ui_info_card("筛查趋势", "按日期和风险等级统计筛查次数", "↗")
         st.plotly_chart(plot_layout(trend_fig, 320), use_container_width=True)
     else:
@@ -793,9 +765,9 @@ def statistics_page():
 def about_page():
     st.title("关于项目")
     render_section_title("系统简介", "♥")
-    render_ui_info_card("双通路AI心电筛查", "本系统面向基层医护人员，是一套基于双通路AI的心电风险辅助筛查系统。系统服务于基层医护、校园体检和社区门诊场景，提供AI初筛、结果可解释和医生终审支持。")
+    render_ui_info_card("双通路AI心电筛查", "本系统面向基层医护人员，是一套基于双通路AI的心电风险辅助筛查系统。系统服务于基层医护、校园体检和社区门诊场景，提供AI初筛、结果可解释和医生终审支持。", "🫀")
     intro_cols = st.columns(3)
-    intro_items = [("目标用户", "基层医护、校园体检、社区门诊", ""), ("核心价值", "AI初筛 + 可解释 + 医生终审", ""), ("使用方式", "上传单导联ECG，查看风险和复核依据", "")]
+    intro_items = [("目标用户", "基层医护、校园体检、社区门诊", "👥"), ("核心价值", "AI初筛 + 可解释 + 医生终审", "✦"), ("使用方式", "上传单导联ECG，查看风险和复核依据", "↗")]
     for col, (title, desc, icon) in zip(intro_cols, intro_items):
         with col:
             render_ui_feature_card(title, desc, icon)
@@ -803,12 +775,12 @@ def about_page():
     render_section_title("核心功能", "▦")
     feature_cols = st.columns(3)
     features = [
-        ("双通路推理", "1D-CNN异常定位 + XGBoost风险分级", ""),
-        ("SHAP可解释", "支持条形图、蜂群图、交互图、决策力图", ""),
-        ("智能诊断解读", "GLM大模型生成风险总结和病因分析", ""),
-        ("疾病知识库", "RAG检索10类常见心电疾病", ""),
-        ("病例教学", "内置典型病例和学习要点", ""),
-        ("病情统计", "风险分布、筛查趋势和异常特征频率", ""),
+        ("双通路推理", "1D-CNN异常定位 + XGBoost风险分级", "⇄"),
+        ("SHAP可解释", "支持条形图、蜂群图、交互图、决策力图", "◈"),
+        ("智能诊断解读", "GLM大模型生成风险总结和病因分析", "✦"),
+        ("疾病知识库", "RAG检索10类常见心电疾病", "⌕"),
+        ("病例教学", "内置典型病例和学习要点", "▤"),
+        ("病情统计", "风险分布、筛查趋势和异常特征频率", "▥"),
     ]
     for index, (title, description, icon) in enumerate(features):
         with feature_cols[index % 3]:
@@ -851,10 +823,9 @@ def about_page():
 
 # 执行主程序入口
 def main():
+    inject_global_css()
     init_state()
     config = normalize_config(load_config())
-    st.session_state["theme"] = config.get("theme", st.session_state.get("theme", "医疗蓝"))
-    inject_global_css(st.session_state.get("theme", "医疗蓝"))
     page = render_sidebar()
     render_header(page, config)
     if page == "心电分析":

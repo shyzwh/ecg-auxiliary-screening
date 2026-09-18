@@ -331,8 +331,6 @@ def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, 
         lines.append(f"低危概率：{float(risk_probs[0]):.2%} | 中危概率：{float(risk_probs[1]):.2%} | 高危概率：{float(risk_probs[2]):.2%}")
         lines.append(f"总心拍数：{int(total_beats)} | 异常心拍数：{int(abnormal_count)}")
         lines.append(f"异常水平：{abn_level}")
-        lines.append(f"双通路判读：数值通路风险等级为{risk_level}，形态通路检测到{int(abnormal_count)}个异常心拍；两条通路结果需结合临床症状和医生复核。")
-        lines.append("复核提示：本结果用于辅助筛查，建议结合既往心电图、当前症状及必要的实验室或影像学检查，由专业医护人员完成最终判断。")
         lines.append("")
         lines.append("关键特征判读：")
         for row in detail_rows:
@@ -347,12 +345,6 @@ def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, 
         lines.append("综合建议：")
         lines.append(suggestion)
 
-        suggestion_sections = {}
-        for suggestion_line in suggestion.splitlines():
-            if "：" in suggestion_line:
-                section_name, section_text = suggestion_line.split("：", 1)
-                suggestion_sections[section_name.strip()] = section_text.strip()
-
         report_text = "\n".join(lines)
         report_data = {
             "risk_num": int(risk_num),
@@ -366,10 +358,6 @@ def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, 
             "key_abnormals": key_abnormals,
             "detail_rows": detail_rows,
             "suggestion": suggestion,
-            "risk_summary": suggestion_sections.get("建议", f"风险等级：{risk_level}，风险评分：{float(risk_score):.3f}"),
-            "etiology_analysis": suggestion_sections.get("病因分析", "暂无病因分析"),
-            "lifestyle_advice": suggestion_sections.get("生活建议", "暂无生活建议"),
-            "doctor_communication": suggestion_sections.get("医生沟通话术", "暂无医生沟通话术"),
             "sex": sex,
             "cnn_status": cnn_state,
         }

@@ -1,0 +1,114 @@
+{
+  "diseases": [
+    {
+      "id": "st_depression",
+      "name": "ST段压低",
+      "category": "心肌缺血",
+      "definition": "ST段低于基线，可能反映心肌复极过程异常。",
+      "ecg_features": ["ST_shift < -0.1mV"],
+      "causes": ["心肌缺血", "电解质紊乱", "自主神经功能异常"],
+      "clinical_significance": "结合胸痛、活动诱发症状及动态心电图判断缺血可能性，单次筛查不能独立确诊。",
+      "treatment_advice": "出现胸痛或气促时及时就医，由医生结合肌钙蛋白和影像学评估。",
+      "related_guidelines": "疑似急性冠脉综合征应按当地胸痛中心流程处理。"
+    },
+    {
+      "id": "st_elevation",
+      "name": "ST段抬高",
+      "category": "心肌损伤与复极异常",
+      "definition": "ST段高于基线，可能与急性心肌损伤、早期复极或心包炎有关。",
+      "ecg_features": ["ST_shift > 0.1mV"],
+      "causes": ["急性心肌梗死", "早期复极", "心包炎", "冠脉痉挛"],
+      "clinical_significance": "新发伴持续胸痛、出汗或呼吸困难时需要紧急排查急性心肌梗死。",
+      "treatment_advice": "疑似急性事件应立即急诊评估，不应自行等待或用药。",
+      "related_guidelines": "符合急性胸痛特征时遵循急性冠脉综合征急救流程。"
+    },
+    {
+      "id": "long_qtc",
+      "name": "QTc延长",
+      "category": "心室复极异常",
+      "definition": "校正后的QT间期延长，提示心室复极时间增加。",
+      "ecg_features": ["QTc >= 450ms", "QTc >= 500ms为显著延长"],
+      "causes": ["药物影响", "低钾或低镁", "先天性长QT综合征", "心肌疾病"],
+      "clinical_significance": "QTc显著延长时室性心律失常风险增加，应复核测量并排查诱因。",
+      "treatment_advice": "不要自行停用处方药，尽快让医生核对用药和电解质。",
+      "related_guidelines": "高风险患者需结合药物说明和心律失常风险进行管理。"
+    },
+    {
+      "id": "sinus_tachycardia",
+      "name": "窦性心动过速",
+      "category": "窦性心律异常",
+      "definition": "窦性心律频率持续高于通常成人静息范围。",
+      "ecg_features": ["HR > 100次/分", "P波形态规则"],
+      "causes": ["发热", "贫血", "脱水", "焦虑", "甲状腺功能异常"],
+      "clinical_significance": "常是身体应激的表现，应优先寻找诱因而不是只降低心率。",
+      "treatment_advice": "休息补液并处理诱因，持续明显心悸或胸痛时就医。",
+      "related_guidelines": "需结合病史、体温、血压和实验室检查评估。"
+    },
+    {
+      "id": "sinus_bradycardia",
+      "name": "窦性心动过缓",
+      "category": "窦性心律异常",
+      "definition": "窦性心律频率低于通常成人静息范围。",
+      "ecg_features": ["HR < 60次/分", "P波与QRS传导规则"],
+      "causes": ["运动员生理状态", "药物影响", "甲状腺功能减退", "窦房结功能异常"],
+      "clinical_significance": "无症状时可能是生理现象，有晕厥或乏力时需排查病理性原因。",
+      "treatment_advice": "结合症状和用药复核，出现晕厥、低血压或意识异常时及时急诊。",
+      "related_guidelines": "症状性心动过缓需按心律失常评估流程处理。"
+    },
+    {
+      "id": "pac",
+      "name": "房性早搏",
+      "category": "房性心律失常",
+      "definition": "起源于窦房结以外心房部位的提前搏动。",
+      "ecg_features": ["提前出现的异常P波", "通常伴窄QRS"],
+      "causes": ["疲劳", "咖啡因", "情绪紧张", "心房扩大或缺血"],
+      "clinical_significance": "偶发时常为良性，频繁发生可能提示心房负荷或房颤风险。",
+      "treatment_advice": "减少咖啡因和熬夜，频繁心悸时进行动态心电图检查。",
+      "related_guidelines": "需结合频率、症状和结构性心脏病风险分层。"
+    },
+    {
+      "id": "pvc",
+      "name": "室性早搏",
+      "category": "室性心律失常",
+      "definition": "起源于心室的提前搏动，通常表现为宽大畸形QRS。",
+      "ecg_features": ["提前宽QRS", "代偿间歇常见"],
+      "causes": ["电解质紊乱", "缺血", "心肌病", "咖啡因或应激"],
+      "clinical_significance": "偶发且无结构性心脏病时风险可能较低，成对或连续出现需重视。",
+      "treatment_advice": "记录诱因并就医评估，伴晕厥、胸痛或持续心悸时急诊处理。",
+      "related_guidelines": "需结合动态心电图、超声心动图和电解质检查。"
+    },
+    {
+      "id": "atrial_fibrillation",
+      "name": "心房颤动",
+      "category": "房性心律失常",
+      "definition": "心房电活动紊乱，心室节律通常绝对不规则。",
+      "ecg_features": ["P波消失", "RR间期绝对不规则", "基线细颤"],
+      "causes": ["高血压", "瓣膜病", "甲状腺功能异常", "年龄相关心房重构"],
+      "clinical_significance": "增加脑卒中和心力衰竭风险，需要确认诊断并进行风险评估。",
+      "treatment_advice": "尽快由医生评估抗凝和控率或复律方案，突发神经症状需立即急诊。",
+      "related_guidelines": "抗凝决策应依据卒中风险评分和出血风险综合判断。"
+    },
+    {
+      "id": "conduction_block",
+      "name": "传导阻滞",
+      "category": "心脏传导异常",
+      "definition": "心房到心室或心室内的电信号传导延迟或中断。",
+      "ecg_features": ["PR间期延长", "QRS增宽", "部分P波后无QRS"],
+      "causes": ["退行性传导系统病变", "缺血", "药物", "电解质异常"],
+      "clinical_significance": "不同部位和程度的风险差异很大，二度和高度阻滞尤其需要复核。",
+      "treatment_advice": "出现晕厥、近乎晕厥或胸闷时立即就医并复核药物。",
+      "related_guidelines": "需由心内科根据阻滞部位和症状决定监测或起搏评估。"
+    },
+    {
+      "id": "t_wave_abnormality",
+      "name": "T波异常",
+      "category": "心室复极异常",
+      "definition": "T波形态、方向或振幅偏离预期，提示复极过程可能改变。",
+      "ecg_features": ["T波倒置", "T波低平", "T波高尖"],
+      "causes": ["心肌缺血", "电解质紊乱", "心室肥厚", "药物影响"],
+      "clinical_significance": "需要结合导联分布、症状和既往心电图判断，不能仅凭单项T波下结论。",
+      "treatment_advice": "复核电解质、用药和症状，伴胸痛或气促时及时就医。",
+      "related_guidelines": "建议与既往心电图对比并结合临床检查。"
+    }
+  ]
+}
