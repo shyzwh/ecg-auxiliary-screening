@@ -12,3 +12,6 @@ logs/
 .pytest_cache/
 .mypy_cache/
 *.tmp
+backup_*
+backup_app_*
+backup_ui_*
