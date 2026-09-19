@@ -420,11 +420,15 @@ def analysis_page(config):
             if st.button("AI润色", use_container_width=True):
                 try:
                     custom_api_key = st.session_state.get("custom_api_key", "") or None
-                    custom_model = st.session_state.get("custom_model", "glm-4-flash") or "glm-4-flash"
+                    custom_model = st.session_state.get("custom_model", "glm-4-flash-250414") or "glm-4-flash-250414"
                     custom_base_url = st.session_state.get("custom_base_url", "") or None
                     polished = polish_report_with_glm(offline_report, api_key=custom_api_key, model=custom_model, base_url=custom_base_url, symptoms=result.get("symptoms", ""))
-                    st.session_state["polished_report"] = polished
-                    st.success("已生成 AI 润色版本")
+                    if polished is None:
+                        st.session_state["polished_report"] = offline_report
+                        st.warning("AI服务暂时不可用，请稍后重试；已回退到离线建议")
+                    else:
+                        st.session_state["polished_report"] = polished
+                        st.success("已生成 AI 润色版本")
                 except Exception as exc:
                     st.session_state["polished_report"] = offline_report
                     st.warning(f"AI 润色失败，已回退到离线建议：{exc}")
@@ -471,7 +475,7 @@ def analysis_page(config):
                 )
                 if diagnosis is None:
                     st.session_state["ai_diagnosis"] = None
-                    st.error(f"AI智能解读失败：{get_last_ai_error()}")
+                    st.error("AI服务暂时不可用，请稍后重试")
                 else:
                     st.session_state["ai_diagnosis"] = diagnosis
                     st.success("已生成AI智能解读")
@@ -494,7 +498,7 @@ def analysis_page(config):
                 if answer:
                     st.session_state["rag_answer"] = answer
                 else:
-                    st.session_state["rag_answer"] = "AI暂时不可用，请先参考离线报告，并咨询专业医护人员。"
+                    st.session_state["rag_answer"] = "AI服务暂时不可用，请稍后重试；请先参考离线报告，并咨询专业医护人员。"
             if st.session_state.get("rag_answer"):
                 render_report_section("AI回答", st.session_state["rag_answer"], "#eef6ff")
 
@@ -639,7 +643,7 @@ def settings_page(config):
             st.caption("系统默认使用管理员配置的后台API。如需使用自己的API密钥，可在下方填写。")
             st.session_state["use_custom_api"] = st.checkbox("使用自定义API", value=st.session_state.get("use_custom_api", False))
             st.session_state["custom_api_key"] = st.text_input("API密钥", value=st.session_state.get("custom_api_key", ""), type="password")
-            st.session_state["custom_model"] = st.text_input("模型名称", value=st.session_state.get("custom_model", "glm-4-flash"))
+            st.session_state["custom_model"] = st.text_input("模型名称", value=st.session_state.get("custom_model", "glm-4-flash-250414"))
             st.session_state["custom_base_url"] = st.text_input("API接口地址", value=st.session_state.get("custom_base_url", "https://open.bigmodel.cn/api/paas/v4/chat/completions"))
         submitted = st.form_submit_button("保存设置", type="primary")
 
@@ -647,7 +651,7 @@ def settings_page(config):
         try:
             from src.llm_client import test_glm_connection
             ok, msg = test_glm_connection(
-                model_name=st.session_state.get("custom_model", "glm-4-flash"),
+                model_name=st.session_state.get("custom_model", "glm-4-flash-250414"),
                 api_key=st.session_state.get("custom_api_key", ""),
                 base_url=st.session_state.get("custom_base_url", ""),
             )

@@ -23,6 +23,15 @@ def inject_global_css(theme="医疗蓝"):
     st.markdown(
         f"""
         <style>
+        /* 隐藏 Streamlit 默认元素，保留 header 容器和侧边栏展开能力 */
+        #MainMenu {{ visibility: hidden; }}
+        footer {{ visibility: hidden; }}
+        [data-testid="stToolbar"] {{ visibility: hidden; }}
+        [data-testid="stDecoration"] {{ visibility: hidden; }}
+        [data-testid="stStatusWidget"] {{ visibility: hidden; }}
+        .stDeployButton {{ display: none; }}
+        [data-testid="stAppDeployButton"] {{ display: none; }}
+
         /* 定义医疗蓝色系与通用主题颜色 */
         :root {{
             --primary-color: {t['primary']};

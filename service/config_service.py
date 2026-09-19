@@ -60,7 +60,7 @@ def init_state():
         "rag_answer": "",
         "use_custom_api": False,
         "custom_api_key": "",
-        "custom_model": "glm-4-flash",
+        "custom_model": "glm-4-flash-250414",
         "custom_base_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
     }
     for key, value in defaults.items():

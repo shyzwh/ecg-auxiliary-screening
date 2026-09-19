@@ -10,18 +10,19 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"), override=False)
 
 GLM_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+MODEL_FALLBACK = ["glm-4-flash-250414", "glm-4-flash", "glm-4.7-flash"]
 GLM_MODEL_OPTIONS = [
     {
         "id": "glm-4.7-flash",
         "label": "glm-4.7-flash（完全免费）",
         "description": "混合思考模型，200K上下文，适合复杂筛查报告解读",
-        "default": True,
+        "default": False,
     },
     {
         "id": "glm-4-flash-250414",
         "label": "glm-4-flash-250414（完全免费）",
         "description": "文本生成模型，128K上下文，适合常规指标解读",
-        "default": False,
+        "default": True,
     },
     {
         "id": "glm-4-flash",
@@ -69,7 +70,7 @@ def get_default_glm_model():
     for item in GLM_MODEL_OPTIONS:
         if item.get("default"):
             return item["id"]
-    return "glm-4.7-flash"
+    return MODEL_FALLBACK[0]
 
 
 def resolve_api_settings(api_key=None, model=None, base_url=None):
@@ -88,7 +89,9 @@ def test_glm_connection(model_name=None, api_key=None, base_url=None):
 
     target_model = model_name or get_default_glm_model()
     try:
-        _call_glm_api("请回复：连接测试正常。", model_name=target_model, api_key=effective_key, base_url=effective_base_url)
+        result = _call_glm_api("请回复：连接测试正常。", model_name=target_model, api_key=effective_key, base_url=effective_base_url)
+        if result is None:
+            return False, f"AI润色连接失败：{get_last_ai_error()}"
         return True, "AI润色连接正常，后台代理可用。"
     except Exception as exc:
         return False, f"AI润色连接失败：{exc}"
@@ -114,55 +117,80 @@ def _call_glm_api(prompt_text, model_name=None, api_key=None, base_url=None, sys
         _set_ai_error("未配置ZHIPU_API_KEY或自定义API密钥")
         return None
 
-    payload = {
-        "model": request_model,
-        "messages": [
-            {
-                "role": "system",
-                "content": system_prompt or "你是专业的心电筛查报告润色助手。请保持医学事实准确、语气温和、贴近医患沟通，不编造诊断，保留必要提醒。",
-            },
-            {"role": "user", "content": prompt_text},
-        ],
-        "temperature": 0.3,
-        "top_p": 0.85,
-    }
+    models = [request_model] + [model for model in MODEL_FALLBACK if model != request_model]
+    last_error = "AI服务暂时不可用，请稍后重试"
+    for current_model in models:
+        payload = {
+            "model": current_model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": system_prompt or "你是专业的心电筛查报告润色助手。请保持医学事实准确、语气温和、贴近医患沟通，不编造诊断，保留必要提醒。",
+                },
+                {"role": "user", "content": prompt_text},
+            ],
+            "temperature": 0.3,
+            "top_p": 0.85,
+        }
+        LOGGER.info("GLM模型尝试: %s", current_model)
+        try:
+            response = requests.post(
+                request_base_url,
+                headers={
+                    "Authorization": f"Bearer {effective_key}",
+                    "Content-Type": "application/json",
+                },
+                data=json.dumps(payload),
+                timeout=timeout,
+            )
+        except requests.Timeout as exc:
+            last_error = f"{current_model}请求超时（当前超时设置为{timeout}秒）"
+            LOGGER.warning("GLM模型失败: %s", last_error)
+            LOGGER.debug("GLM模型异常详情: %s", exc)
+            continue
+        except requests.RequestException as exc:
+            last_error = f"{current_model}网络请求失败：{exc}"
+            LOGGER.warning("GLM模型失败: %s", last_error)
+            _set_ai_error(last_error, exc)
+            return None
 
-    try:
-        response = requests.post(
-            request_base_url,
-            headers={
-                "Authorization": f"Bearer {effective_key}",
-                "Content-Type": "application/json",
-            },
-            data=json.dumps(payload),
-            timeout=timeout,
-        )
-    except requests.Timeout as exc:
-        _set_ai_error(f"GLM请求超时（当前超时设置为{timeout}秒）", exc)
-        raise
-    except requests.RequestException as exc:
-        _set_ai_error(f"GLM网络请求失败：{exc}", exc)
-        raise
+        if response.status_code != 200:
+            error_text = response.text[:300].replace("\n", " ")
+            last_error = f"{current_model} HTTP {response.status_code}: {error_text}"
+            LOGGER.warning("GLM模型失败: %s", last_error)
+            if response.status_code == 429:
+                continue
+            _set_ai_error(last_error)
+            return None
 
-    if response.status_code != 200:
-        error_text = response.text[:300].replace("\n", " ")
-        message = f"HTTP {response.status_code}: {error_text}"
-        _set_ai_error(message)
-        raise RuntimeError(message)
+        try:
+            data = response.json()
+        except ValueError as exc:
+            last_error = f"{current_model}返回内容不是有效JSON"
+            LOGGER.warning("GLM模型失败: %s", last_error)
+            _set_ai_error(last_error, exc)
+            return None
+        if "choices" not in data or not data["choices"]:
+            last_error = f"{current_model}返回结果为空"
+            LOGGER.warning("GLM模型失败: %s", last_error)
+            _set_ai_error(last_error)
+            return None
 
-    data = response.json()
-    if "choices" not in data or not data["choices"]:
-        _set_ai_error("AI返回结果为空")
-        raise RuntimeError("AI返回结果为空")
+        message = data["choices"][0].get("message", {})
+        content = message.get("content", "")
+        if isinstance(content, list):
+            content = "".join(part.get("text", "") for part in content)
+        LOGGER.info("GLM模型调用成功: %s", current_model)
+        global _LAST_AI_ERROR
+        _LAST_AI_ERROR = None
+        return str(content).strip()
 
-    message = data["choices"][0].get("message", {})
-    content = message.get("content", "")
-    if isinstance(content, list):
-        content = "".join(part.get("text", "") for part in content)
-    return str(content).strip()
+    _set_ai_error("AI服务暂时不可用，请稍后重试")
+    LOGGER.error("GLM全部模型调用失败")
+    return None
 
 
-def polish_report_with_glm(report_text, api_key=None, model="glm-4-flash", base_url=None, symptoms=""):
+def polish_report_with_glm(report_text, api_key=None, model="glm-4-flash-250414", base_url=None, symptoms=""):
     """
     把离线报告改写成更适合患者和医生阅读的中文版本。
 
