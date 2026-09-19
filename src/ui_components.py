@@ -4,12 +4,15 @@ import streamlit as st
 
 
 def _icon_html(icon):
+    """过滤 Material 图标占位符，保留普通文本图标。"""
     if str(icon).startswith(":material/") and str(icon).endswith(":"):
         return ""
     return str(icon or "")
 
 
 # 注入全局样式，包含毛玻璃卡片、医疗蓝主题、悬停效果
+# 统一主题和视觉组件，保证多个页面风格一致
+
 def inject_global_css(theme="医疗蓝"):
     THEMES = {
         "医疗蓝": {"primary": "#1A5CFF", "bg": "#F5F7FA"},
@@ -218,7 +221,10 @@ def inject_global_css(theme="医疗蓝"):
 
 
 # 渲染患者信息卡片
+# 用于在分析页展示已录入的患者基本信息
+
 def render_patient_card(patient_name="未命名患者", age="未录入", sex="未指定"):
+    """渲染患者基础信息卡片。"""
     st.markdown(
         f"""
         <div class="glass-panel" style="min-height:0;">
@@ -233,7 +239,10 @@ def render_patient_card(patient_name="未命名患者", age="未录入", sex="�
 
 
 # 渲染上传卡片
+# 展示文件选择框与示例数据入口，方便前台快速试用
+
 def render_upload_card():
+    """渲染 ECG 文件上传区和示例数据按钮。"""
     st.markdown(
         """
         <div class="glass-panel" style="min-height:0;">
@@ -248,7 +257,10 @@ def render_upload_card():
 
 
 # 渲染风险等级徽章
+# 通过统一颜色和文字给出当前风险状态
+
 def render_risk_badge(level="低危", value=None):
+    """按风险等级渲染颜色徽章。"""
     level_map = {
         "低危": ("#52c41a", "低危"),
         "中危": ("#faad14", "中危"),

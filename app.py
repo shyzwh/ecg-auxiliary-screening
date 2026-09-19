@@ -50,7 +50,7 @@ st.set_page_config(
     layout="wide"
 )
 
-APP_VERSION = "v2.0.0"
+APP_VERSION = "v2.1.0"
 RISK_COLORS = {"低危": "#52c41a", "中危": "#faad14", "高危": "#ff4d4f"}
 RISK_ICONS = {"低危": "✓", "中危": "!", "高危": "!"}
 DEFAULT_UI_CONFIG = {
@@ -69,7 +69,15 @@ DEFAULT_UI_CONFIG = {
 
 
 # 渲染侧边栏导航
+# 只负责页面入口和版本信息展示，不处理业务状态更新
+
 def render_sidebar():
+    """
+    渲染侧边栏导航和运行信息。
+
+    返回:
+        当前页面名称
+    """
     with st.sidebar:
         st.markdown("# ♥ 心电筛查")
         st.caption("辅助分析工作台")
@@ -80,12 +88,15 @@ def render_sidebar():
             label_visibility="collapsed",
         )
         st.markdown("---")
+        # 统一展示当前应用版本，避免各页面版本号漂移
         st.caption(f"{APP_VERSION} · 本地运行")
         st.caption("所有患者数据仅保存在本地，不会对外上传。")
     return page
 
 
 # 渲染页面标题栏
+# 需要附带当前页面、版本和阈值信息，便于快速复核
+
 def render_header(page, config):
     st.markdown(
         """
@@ -99,7 +110,19 @@ def render_header(page, config):
 
 
 # 设置绘图布局样式
+# 让所有 Plotly 图表保持统一风格，减少页面审美差异
+
 def plot_layout(fig, height=360):
+    """
+    统一设置图表样式，保证所有绘图使用相同网格和底色。
+
+    参数:
+        fig: Plotly 图对象
+        height: 图表高度
+
+    返回:
+        格式化后的图对象
+    """
     fig.update_layout(
         height=height,
         paper_bgcolor="rgba(0,0,0,0)",
@@ -114,6 +137,8 @@ def plot_layout(fig, height=360):
 
 
 # 渲染单导联心电波形
+# 直接从分析结果中输出清洗信号、R峰和异常心拍位置
+
 def render_waveform(result):
     signal = np.asarray(result["signal"], dtype=float)
     fs = float(result.get("fs", 1) or 1)
@@ -131,7 +156,17 @@ def render_waveform(result):
 
 
 # 渲染特征指标卡片
+# 使用异常状态决定背景色，快速识别高风险特征
+
 def render_feature_card(name, value, severity):
+    """
+    按特征名称和值渲染一张卡片。
+
+    参数:
+        name: 特征名称
+        value: 特征数值
+        severity: 判读状态，如 正常 / 轻度异常
+    """
     card_bg = "rgba(255, 235, 238, 0.75)" if "异常" in severity else "rgba(255,255,255,0.8)"
     text_color = "#b42318" if "异常" in severity else "#18324f"
     st.markdown(
@@ -141,6 +176,8 @@ def render_feature_card(name, value, severity):
 
 
 # 渲染临床特征分组
+# 根据节律、传导、复极和波形四类组织展示特征
+
 def render_clinical_feature_groups(result):
     from src.report_gen import judge_feature, DEFAULT_THRESHOLDS
 
@@ -162,7 +199,18 @@ def render_clinical_feature_groups(result):
 
 
 # 渲染报告分段块
+# 按统一风格输出结构化说明，便于患者和医生查看
+
 def render_report_section(title, body, bg_color="#f5f7ff", text_color="#18324f"):
+    """
+    按卡片样式渲染报告段落。
+
+    参数:
+        title: 段落标题
+        body: 段落内容
+        bg_color: 背景色
+        text_color: 文本色
+    """
     st.markdown(
         f"<div style='background:{bg_color};padding:1rem 1.2rem;border-radius:16px;border:1px solid rgba(24,50,79,0.08);color:{text_color};margin:0.7rem 0 1rem 0;'><div style='font-size:1.05rem;font-weight:800;margin-bottom:0.5rem;'>{title}</div><div style='white-space:pre-wrap;line-height:1.8;'>{html.escape(body)}</div></div>",
         unsafe_allow_html=True,
@@ -170,6 +218,8 @@ def render_report_section(title, body, bg_color="#f5f7ff", text_color="#18324f")
 
 
 # 渲染心电分析页面
+# 负责上传、校验、推理和报告展示的主流程
+
 def analysis_page(config):
     st.title("心电分析")
     st.caption("上传单导联 ECG，完成预处理、双通路分析与可解释报告生成。所有患者数据仅保存在本地，不会对外上传。")
@@ -190,6 +240,13 @@ def analysis_page(config):
             if st.button("保存个人信息", use_container_width=True):
                 save_patient_profile()
                 st.success("个人信息已保存")
+        symptoms = st.text_area(
+            "症状描述（可选）",
+            value=st.session_state.get("symptoms", ""),
+            placeholder="如：最近一周胸闷、心悸，运动后加重",
+            max_chars=200,
+        )
+        st.session_state["symptoms"] = symptoms
         valid, msg = validate_patient_info(st.session_state.get("patient_name", ""), st.session_state.get("patient_age", 0), st.session_state.get("patient_sex", "未指定"))
         if not valid:
             st.error(msg)
@@ -229,6 +286,7 @@ def analysis_page(config):
                     config,
                     patient_info=get_patient_profile(),
                     progress_callback=update_progress,
+                    symptoms=st.session_state.get("symptoms", ""),
                 )
                 progress.empty()
                 if result_obj is not None:
@@ -364,7 +422,7 @@ def analysis_page(config):
                     custom_api_key = st.session_state.get("custom_api_key", "") or None
                     custom_model = st.session_state.get("custom_model", "glm-4-flash") or "glm-4-flash"
                     custom_base_url = st.session_state.get("custom_base_url", "") or None
-                    polished = polish_report_with_glm(offline_report, api_key=custom_api_key, model=custom_model, base_url=custom_base_url)
+                    polished = polish_report_with_glm(offline_report, api_key=custom_api_key, model=custom_model, base_url=custom_base_url, symptoms=result.get("symptoms", ""))
                     st.session_state["polished_report"] = polished
                     st.success("已生成 AI 润色版本")
                 except Exception as exc:
@@ -409,6 +467,7 @@ def analysis_page(config):
                     api_key=st.session_state.get("custom_api_key", "") or None,
                     model=st.session_state.get("custom_model", "") or None,
                     base_url=st.session_state.get("custom_base_url", "") or None,
+                    symptoms=result.get("symptoms", ""),
                 )
                 if diagnosis is None:
                     st.session_state["ai_diagnosis"] = None
@@ -455,6 +514,7 @@ def analysis_page(config):
                     "特征": result.get("features", {}),
                     "patient_name": st.session_state.get("patient_name", ""),
                     "patient_info": result.get("patient_info", {}),
+                    "symptoms": result.get("symptoms", ""),
                 })
                 save_history(records, history_path)
                 st.success("已保存到历史记录")
@@ -536,6 +596,7 @@ def history_page(config):
                     hr = feature_values.get("HR", "暂无数据")
                     abnormal_count = row.get("异常心拍数", "暂无数据")
                     st.markdown(f"**关键指标**　心率：{hr}　异常心拍数：{abnormal_count}")
+                    st.markdown(f"**症状描述**　{row.get('symptoms') or '未填写'}")
                     if row.get("备注"):
                         st.caption(f"备注：{row.get('备注')}")
                     report_text = row.get("报告", "") or "暂无报告"
@@ -843,7 +904,7 @@ def about_page():
     render_ui_info_card("训练数据", "MIT-BIH心律失常数据库", "▤")
 
     render_section_title("版本信息", "ℹ")
-    render_ui_stat_card("当前版本", "V2.0.0", "2026年9月", "•")
+    render_ui_stat_card("当前版本", "V2.1.0", "2026年9月", "•")
 
     render_section_title("免责声明", "!")
     render_ui_warning_card("本系统为辅助筛查工具，不替代执业医师诊断。所有分析结果仅供参考，请由专业医护人员结合完整病史和必要检查进行终审。")

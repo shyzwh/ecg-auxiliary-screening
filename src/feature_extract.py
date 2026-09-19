@@ -3,12 +3,14 @@
 
 # 所有函数都返回统一格式：status, data, msg。
 # 对R峰过少、信号太短都做了判断。
+# 该模块负责从清洗后的信号中提取心率、时域和波形特征
 
 import numpy as np
 from src.logger import logger
 
 
 def _sanitize_signal(signal):
+    # 统一标准化输入格式，避免后续特征计算因为极值或 NaN 失效
     arr = np.asarray(signal, dtype=float).reshape(-1)
     if arr.size == 0:
         return arr, False
@@ -19,7 +21,17 @@ def _sanitize_signal(signal):
 
 
 def pan_tompkins(ecg_signal, fs):
-    """简化版Pan-Tompkins算法，检测R波位置"""
+    """
+    使用简化 Pan-Tompkins 思路定位 R 峰。
+
+    参数:
+        ecg_signal: 清洗后的 ECG 信号
+        fs: 采样率
+
+    返回:
+        (status, r_peaks, msg)
+    """
+    # 先做平方和积分，利用 QRS 波能量集中特点筛选峰值
     signal_array, valid = _sanitize_signal(ecg_signal)
     if not valid or len(signal_array) < 30:
         return "error", None, "信号噪声过大或心跳过少，建议更换数据"
@@ -63,7 +75,8 @@ def pan_tompkins(ecg_signal, fs):
 
 
 def compute_hrv_features(r_peaks, fs):
-    """根据R峰位置计算5项基础HRV特征"""
+    """根据 R 峰间期计算心率与 HRV 相关特征。"""
+    # RR 间期决定心率和变异性，适合做节律稳定性判断
     if len(r_peaks) < 3:
         return "error", None, "R峰数量不足，无法计算HRV特征"
 
@@ -101,10 +114,11 @@ def compute_hrv_features(r_peaks, fs):
         return "error", None, f"HRV特征计算失败：{e}"
 
 
-# 计算PR、QRS、QT、QTc:找到R峰后，再找Q波和S波，从而确定QRS起点和终点，再推算PR、QT。
+# 计算 PR、QRS、QT、QTc：找到 R 峰后，再找 Q 波和 S 波，确定波形起止点后推算时间窗
 
 def compute_wave_timing_features(ecg_signal, r_peaks, fs):
-    """计算PR间期、QRS时限、QT间期、QTc"""
+    """计算 PR、QRS、QT 和 QTc 等时间特征。"""
+    # 依据 R 峰位置向前/向后扩展窗口，粗估 Q 波起点、S 波终点和 T 波峰值
     if len(r_peaks) < 3:
         return "error", None, "R峰数量不足，无法计算时间特征"
 
@@ -159,10 +173,11 @@ def compute_wave_timing_features(ecg_signal, r_peaks, fs):
         return "error", None, f"波形时间特征计算失败：{e}"
 
 
-# 计算ST段偏移、P波振幅、T波振幅    
+# 计算 ST 段偏移、P 波振幅、T 波振幅
 
 def compute_wave_amp_features(ecg_signal, r_peaks, fs):
-    """计算ST段偏移量、P波振幅、T波振幅"""
+    """计算 ST 段偏移、P 波振幅和 T 波振幅。"""
+    # ST 段与波形振幅能反映复极状态和波形形态异常
     if len(r_peaks) < 3:
         return "error", None, "R峰数量不足，无法计算振幅特征"
 
@@ -214,7 +229,18 @@ def compute_wave_amp_features(ecg_signal, r_peaks, fs):
 # 总入口函数
 
 def extract_all_features(ecg_signal, r_peaks, fs):
-    """合并所有12项特征"""
+    """
+    汇总 12 项特征并返回统一结构。
+
+    参数:
+        ecg_signal: ECG 信号
+        r_peaks: R 峰位置
+        fs: 采样率
+
+    返回:
+        (status, features, msg)
+    """
+    # 分别计算 HRV、时间和振幅特征，再合并为最终 12 项特征字典
     status1, hrv, _ = compute_hrv_features(r_peaks, fs)
     status2, timing, _ = compute_wave_timing_features(ecg_signal, r_peaks, fs)
     status3, amp, _ = compute_wave_amp_features(ecg_signal, r_peaks, fs)

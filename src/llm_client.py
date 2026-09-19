@@ -35,6 +35,7 @@ _LAST_AI_ERROR = None
 
 
 def _set_ai_error(message, exc=None):
+    """记录最后一次 GLM 错误，供 UI 显示和兜底处理。"""
     global _LAST_AI_ERROR
     _LAST_AI_ERROR = str(message)
     if exc is not None:
@@ -44,6 +45,7 @@ def _set_ai_error(message, exc=None):
 
 
 def get_last_ai_error():
+    """返回最近一次 GLM 错误信息。"""
     return _LAST_AI_ERROR or "未返回具体错误信息。"
 
 
@@ -63,6 +65,7 @@ def get_glm_api_key():
 
 
 def get_default_glm_model():
+    """返回默认使用的 GLM 模型。"""
     for item in GLM_MODEL_OPTIONS:
         if item.get("default"):
             return item["id"]
@@ -70,6 +73,7 @@ def get_default_glm_model():
 
 
 def resolve_api_settings(api_key=None, model=None, base_url=None):
+    """统一生成有效的 API Key、模型名和请求地址。"""
     effective_key = (api_key or "").strip() or get_glm_api_key()
     effective_model = (model or "").strip() or get_default_glm_model()
     effective_base_url = (base_url or "").strip() or GLM_API_URL
@@ -77,6 +81,7 @@ def resolve_api_settings(api_key=None, model=None, base_url=None):
 
 
 def test_glm_connection(model_name=None, api_key=None, base_url=None):
+    """向 GLM 发送一次连接测试，验证 key 和 base_url 是否可用。"""
     effective_key, _, effective_base_url = resolve_api_settings(api_key, model_name, base_url)
     if not effective_key:
         return False, "未配置密钥，AI润色不可用。"
@@ -90,6 +95,20 @@ def test_glm_connection(model_name=None, api_key=None, base_url=None):
 
 
 def _call_glm_api(prompt_text, model_name=None, api_key=None, base_url=None, system_prompt=None, timeout=15):
+    """
+    调用 GLM 接口并返回纯文本响应。
+
+    参数:
+        prompt_text: 用户提示词
+        model_name: 模型名
+        api_key: 自定义密钥
+        base_url: 接口地址
+        system_prompt: 系统提示词
+        timeout: 超时秒数
+
+    返回:
+        模型返回文本
+    """
     effective_key, request_model, request_base_url = resolve_api_settings(api_key, model_name, base_url)
     if not effective_key:
         _set_ai_error("未配置ZHIPU_API_KEY或自定义API密钥")
@@ -143,7 +162,20 @@ def _call_glm_api(prompt_text, model_name=None, api_key=None, base_url=None, sys
     return str(content).strip()
 
 
-def polish_report_with_glm(report_text, api_key=None, model="glm-4-flash", base_url=None):
+def polish_report_with_glm(report_text, api_key=None, model="glm-4-flash", base_url=None, symptoms=""):
+    """
+    把离线报告改写成更适合患者和医生阅读的中文版本。
+
+    参数:
+        report_text: 离线报告文本
+        api_key: 自定义 API 密钥
+        model: GLM 模型名
+        base_url: 接口地址
+        symptoms: 症状描述
+
+    返回:
+        润色后的文本或回退说明
+    """
     if not report_text or not str(report_text).strip():
         return "离线建议为空，无法进行 AI 润色。"
 
@@ -167,7 +199,9 @@ def polish_report_with_glm(report_text, api_key=None, model="glm-4-flash", base_
         "不要罗列全部12项特征，只讲异常项；不要输出空泛的‘请结合具体参数评估’，不要重复罗列特征数值。\n\n"
         f"风险等级：{risk_level}\n"
         f"异常特征：{abnormal_features}\n"
-        f"原始建议：{advice}"
+        f"原始建议：{advice}\n"
+        f"患者自述症状：{symptoms or '未提供'}\n"
+        "如果症状不为空，请在病因分析或医生话术中结合症状说明；如果症状为空，按心电数据和原始建议分析，不要虚构症状。"
     )
     return _call_glm_api(
         prompt,
@@ -179,6 +213,7 @@ def polish_report_with_glm(report_text, api_key=None, model="glm-4-flash", base_
 
 
 def _json_safe(value):
+    """递归把 numpy / 其他对象转成 JSON 可序列化格式。"""
     if isinstance(value, dict):
         return {str(key): _json_safe(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):
@@ -197,6 +232,7 @@ def _json_safe(value):
 
 
 def _parse_json_response(content):
+    """从 GLM 返回内容里提取 JSON 结构。"""
     if not content:
         return None
     text = str(content).strip()
@@ -216,8 +252,20 @@ def _parse_json_response(content):
     return None
 
 
-def generate_ai_diagnosis(analysis_result, api_key=None, model=None, base_url=None):
-    """Generate a structured, plain-language interpretation of an ECG analysis."""
+def generate_ai_diagnosis(analysis_result, api_key=None, model=None, base_url=None, symptoms=""):
+    """
+    基于 ECG 分析结果生成结构化第二意见。
+
+    参数:
+        analysis_result: 分析结果字典
+        api_key: 自定义 API 密钥
+        model: GLM 模型名
+        base_url: 接口地址
+        symptoms: 症状描述
+
+    返回:
+        结构化 JSON 字典或 None
+    """
     global _LAST_AI_ERROR
     _LAST_AI_ERROR = None
     try:
@@ -237,6 +285,7 @@ def generate_ai_diagnosis(analysis_result, api_key=None, model=None, base_url=No
                 "total_beat_count": len(analysis_result.get("r_peaks", []) or []),
             },
             "patient_info": analysis_result.get("patient_info", {}),
+            "symptoms": symptoms or analysis_result.get("symptoms", ""),
             "offline_report": analysis_result.get("report_data", {}),
         }
         prompt = (
@@ -247,6 +296,8 @@ def generate_ai_diagnosis(analysis_result, api_key=None, model=None, base_url=No
             "将这三段分别放入risk_summary、etiology_analysis、lifestyle_advice字段；"
             "shap_interpretation只写一句关键归因，emergency_warning只写一句必要的紧急提示，"
             "feature_explanations只保留最关键的1-2项。\n"
+            f"患者自述症状：{symptoms or '未提供'}\n"
+            "如果症状不为空，请结合症状分析其与心电发现的关系；如果症状为空，按原有逻辑分析，不要虚构症状。\n"
             "只返回合法JSON对象，不要Markdown代码块，不要额外说明。JSON字段必须严格包含："
             "risk_summary（字符串）、etiology_analysis（字符串）、feature_explanations（数组，"
             "每项含feature、value、explanation）、shap_interpretation（字符串）、"
@@ -278,7 +329,15 @@ def generate_ai_diagnosis(analysis_result, api_key=None, model=None, base_url=No
 
 
 def answer_with_rag(question):
-    """Answer an ECG disease question using the local knowledge base and GLM."""
+    """
+    用本地疾病知识库和 GLM 生成针对性回答。
+
+    参数:
+        question: 用户提问
+
+    返回:
+        纯文本回答或 None
+    """
     try:
         from knowledge.retriever import search_disease
 

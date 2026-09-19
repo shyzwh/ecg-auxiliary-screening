@@ -3,6 +3,8 @@
 # 日志记录：每次读取成功或失败，都会写进日志。
 # 新增 .npy 支持：为以后扩展留了口子。
 
+# 该模块负责读取 .dat / .csv / .txt / .npy 格式 ECG 数据，并统一返回 (status, signal, fs, msg)
+
 import os
 import numpy as np
 import pandas as pd
@@ -13,9 +15,16 @@ from src.logger import logger
 
 def load_ecg(file_path, fs_input=None):
     """
-    根据文件类型自动选择读取方式。
-    返回：status, signal, fs, msg
+    自动识别 ECG 文件类型并读取信号。
+
+    参数:
+        file_path: ECG 文件路径
+        fs_input: 手动指定采样率，CSV/NPY 读取时可能使用
+
+    返回:
+        (status, signal, fs, msg)
     """
+    # 先做文件存在性与扩展名校验，再分流到对应解析函数
     if not os.path.exists(file_path):
         return "error", None, None, "文件不存在，请检查路径"
 
@@ -36,7 +45,8 @@ def load_ecg(file_path, fs_input=None):
 
 
 def _load_mitbih(file_path):
-    """读取MIT-BIH .dat文件，需要同目录下存在对应 .hea 文件"""
+    """读取 MIT-BIH .dat 文件，需要同目录下存在对应 .hea 文件。"""
+    # wfdb 会根据 .hea 文件解析通道和采样率，便于读取标准 MIT-BIH 数据
     record_name = os.path.splitext(os.fspath(file_path))[0]
     record = wfdb.rdrecord(record_name, channels=[0])
     signal = record.p_signal[:, 0]
@@ -46,7 +56,8 @@ def _load_mitbih(file_path):
 
 
 def _load_csv_signal(file_path, fs_input=None):
-    """读取CSV/TXT，自动区分时间列与电压列"""
+    """读取 CSV/TXT 格式，自动识别时间列和电压列。"""
+    # 兼容不同表头命名：时间可能是 time / sec / 秒，电压可能是 voltage / mv / 电压
     df = pd.read_csv(file_path, sep=None, engine="python")
 
     cols = [str(c).lower() for c in df.columns.tolist()]
@@ -94,7 +105,8 @@ def _load_csv_signal(file_path, fs_input=None):
 
 
 def _load_npy_signal(file_path, fs_input=None):
-    """读取.npy格式信号"""
+    """读取.npy 格式信号，需在调用前提供采样率。"""
+    # NPY 数据通常只有纯信号数组，没有时间轴，因此必须由上层显式传入 fs
     if fs_input is None:
         return "error", None, None, "读取.npy需要手动提供采样率"
 

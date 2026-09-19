@@ -6,6 +6,7 @@ KNOWLEDGE_PATH = BASE_DIR / "knowledge" / "ecg_diseases.json"
 
 
 def load_diseases():
+    """读取本地 ECG 疾病知识库，返回疾病列表。"""
     try:
         with KNOWLEDGE_PATH.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
@@ -15,6 +16,15 @@ def load_diseases():
 
 
 def search_disease(query_text):
+    """
+    按疾病名称、分类和关键词匹配知识库，返回最相关的条目。
+
+    参数:
+        query_text: 用户问题或检索词
+
+    返回:
+        前 5 个最相关疾病条目
+    """
     query = str(query_text or "").strip().lower()
     if not query:
         return []

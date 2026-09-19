@@ -1,4 +1,5 @@
 # 接收12项特征，优先用XGBoost模型推理。如果模型不存在，就用规则兜底。
+# 该模块只负责风险预测、规则回退与 SHAP 解释，不处理 UI 或报告展示
 
 import json
 import os
@@ -19,7 +20,16 @@ FEATURE_ORDER = [
 
 
 def load_risk_model(model_path):
-    # 加载XGBoost模型和标准化器
+    """
+    加载 XGBoost 风险模型与标准化器。
+
+    参数:
+        model_path: 模型文件路径
+
+    返回:
+        (status, model, scaler, msg)
+    """
+    # 先加载模型，再寻找同目录下的 scaler；如果不存在则以 None 处理
     try:
         model_path = str(model_path).replace("\\", "/")
         if not os.path.exists(model_path):
@@ -43,8 +53,9 @@ def load_risk_model(model_path):
 
 
 def rule_based_inference(features, config=None, sex=""):
-    """规则兜底推理，不依赖模型，根据临床阈值判断风险"""
+    """规则兜底推理，不依赖模型，根据临床阈值判断风险。"""
     try:
+        # 当模型不可用时，采用加权规则给出低/中/高危判断
         config = config or {}
         hr = features.get("HR", 0)
         qrs = features.get("QRS", 0)
@@ -103,7 +114,19 @@ def rule_based_inference(features, config=None, sex=""):
 
 
 def predict_risk(features, model_path="models/ecg_risk_xgb_model.json", config=None, sex=""):
-    # 输入12项特征，输出三级风险
+    """
+    根据 12 项特征输出低/中/高危风险。
+
+    参数:
+        features: 特征字典
+        model_path: 模型路径
+        config: 配置项
+        sex: 患者性别
+
+    返回:
+        (status, risk_level, risk_num, score, msg)
+    """
+    # 先走模型推理；模型失败时回退到规则引擎
     status, model, scaler, _ = load_risk_model(model_path)
 
     if status == "success":
@@ -128,8 +151,10 @@ def predict_risk(features, model_path="models/ecg_risk_xgb_model.json", config=N
     return rule_based_inference(features, config, sex)
 
 # SHAP
+# 这里直接计算单样本特征贡献，便于在报告命中解释模型输出
+
 def explain_with_shap(features, model_path="models/ecg_risk_xgb_model.json"):
-    # 使用TreeExplainer生成特征贡献
+    """用 TreeExplainer 生成单样本 SHAP 贡献。"""
     try:
         import shap
 

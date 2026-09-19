@@ -198,6 +198,19 @@ def build_dynamic_feature_description(feature_name, value, feature_rules=None):
 
 # 根据阈值判断特征状态
 def judge_feature(name, value, thresholds, sex=""):
+    """
+    按阈值给出单项特征的正常/轻度异常/显著异常状态。
+
+    参数:
+        name: 特征名
+        value: 特征数值
+        thresholds: 阈值字典
+        sex: 患者性别
+
+    返回:
+        (severity, display_text)
+    """
+    # QTc 和 ST_shift 有性别/方向差异，因此需要单独分支判断
     if value is None:
         return "未检测", "未检测"
     t = thresholds.get(name, {})
@@ -238,8 +251,11 @@ def judge_feature(name, value, thresholds, sex=""):
     return "正常", f"{value}{unit}"
 
 
-# 归一化CNN状态为正常或异常
+# 归一化 CNN 状态为正常或异常
+# 同时兼容模型返回值和心拍异常数量两种输入来源
+
 def _normalize_cnn_status(cnn_status, abnormal_count=0):
+    """把 CNN 状态统一成 normal / abnormal。"""
     if cnn_status is None:
         return "normal"
     raw = str(cnn_status).lower()
@@ -252,8 +268,26 @@ def _normalize_cnn_status(cnn_status, abnormal_count=0):
     return "normal"
 
 
-# 处理CNN状态与风险等级组合
+# 处理 CNN 状态与风险等级组合
+# 双通路结果决定最终建议语气和是否建议就医
+
 def build_suggestion(risk_num, abn_level, key_abnormals, features=None, cnn_status="normal", abnormal_count=0, total_beats=0, sex="未指定"):
+    """
+    根据风险等级、异常心拍率和关键特征生成中文建议文本。
+
+    参数:
+        risk_num: 风险等级编号
+        abn_level: 异常水平
+        key_abnormals: 关键异常特征列表
+        features: 特征字典
+        cnn_status: CNN 结果状态
+        abnormal_count: 异常心拍数
+        total_beats: 总心拍数
+        sex: 患者性别
+
+    返回:
+        中文建议字符串
+    """
     features = features or {}
     cnn_state = _normalize_cnn_status(cnn_status, abnormal_count)
     risk_num = int(risk_num)
@@ -281,7 +315,25 @@ def build_suggestion(risk_num, abn_level, key_abnormals, features=None, cnn_stat
 
 
 # 根据风险结果生成中文说明性报告
+# 既输出可读文本，也输出结构化字典供 UI / PDF / 导出复用
+
 def generate_report(risk_num, risk_score, risk_probs, features, abnormal_count, total_beats, sex="未指定", cnn_status="normal"):
+    """
+    生成风险报告文本和结构化字段。
+
+    参数:
+        risk_num: 风险等级编号
+        risk_score: 风险分值
+        risk_probs: 各风险概率
+        features: 12 项特征
+        abnormal_count: 异常心拍数
+        total_beats: 总心拍数
+        sex: 患者性别
+        cnn_status: CNN 状态
+
+    返回:
+        (status, report_text, report_data)
+    """
     try:
         risk_level_map = {0: "低危", 1: "中危", 2: "高危"}
         risk_level = risk_level_map.get(int(risk_num), "未知")

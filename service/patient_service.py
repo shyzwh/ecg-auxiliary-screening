@@ -2,6 +2,7 @@ import streamlit as st
 
 
 def mask_name(name):
+    """给姓名做展示层脱敏，保留首字符。"""
     raw = str(name or "").strip()
     if not raw:
         return "未命名患者"
@@ -13,6 +14,7 @@ def mask_name(name):
 
 
 def validate_patient_info(name, age, sex):
+    """校验姓名长度和年龄区间，确保用户输入合法。"""
     if name is not None and len(str(name).strip()) > 50:
         return False, "姓名不能超过 50 个字符。"
     try:
@@ -25,6 +27,7 @@ def validate_patient_info(name, age, sex):
 
 
 def get_patient_profile():
+    """从 session state 读出当前患者信息。"""
     return {
         "name": st.session_state.get("patient_name", ""),
         "age": int(st.session_state.get("patient_age", 0) or 0),
@@ -37,4 +40,5 @@ def get_patient_profile():
 
 
 def save_patient_profile():
+    """把当前患者信息写回 session state。"""
     st.session_state["patient_profile"] = get_patient_profile()

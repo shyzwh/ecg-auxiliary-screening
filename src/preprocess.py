@@ -7,6 +7,7 @@ from src.logger import logger
 
 
 def _sanitize_signal(ecg_signal):
+    # 统一把输入转成 1D 浮点数组，并去掉 NaN / inf，避免后续滤波崩溃
     arr = np.asarray(ecg_signal, dtype=float).reshape(-1)
     if arr.size == 0:
         return arr, False
@@ -20,9 +21,16 @@ def _sanitize_signal(ecg_signal):
 
 def preprocess_ecg(ecg_signal, fs):
     """
-    对心电信号进行标准化预处理。
-    返回：clean_signal
+    对 ECG 信号执行清洗、去噪和基线校正。
+
+    参数:
+        ecg_signal: 原始心电信号
+        fs: 采样率
+
+    返回:
+        (status, clean_signal, msg)
     """
+    # 空信号和极小噪声信号直接拒绝，避免后续 QRS 检测失败
     if ecg_signal is None:
         return "error", None, "信号为空，无法预处理"
 
@@ -52,7 +60,8 @@ def preprocess_ecg(ecg_signal, fs):
 
 
 def _detect_notch_freq(ecg_signal, fs):
-    """自动判断50Hz还是60Hz工频干扰"""
+    """自动判断 50Hz 或 60Hz 工频干扰。"""
+    # FFT 可视化频谱峰值，选择更明显的工频点进行陷波
     if len(ecg_signal) < fs:
         return None
 
@@ -73,13 +82,13 @@ def _detect_notch_freq(ecg_signal, fs):
 
 
 def _notch_filter(ecg_signal, fs, freq):
-    """陷波滤波器"""
+    """用陷波滤波器去除固定工频干扰。"""
     b, a = signal.iirnotch(freq, 30, fs)
     return signal.filtfilt(b, a, ecg_signal)
 
 
 def _bandpass_filter(ecg_signal, fs, low, high):
-    """带通滤波器"""
+    """用带通滤波器保留心电信号的有效频带。"""
     nyq = fs / 2.0
     b, a = signal.butter(2, [low / nyq, high / nyq], btype="band")
     return signal.filtfilt(b, a, ecg_signal)

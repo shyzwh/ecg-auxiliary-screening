@@ -14,6 +14,18 @@ from src.report_gen import generate_report
 
 
 def risk_probabilities(features, config, risk_num, score):
+    """
+    计算各风险类别概率，并在模型不可用时给出兜底值。
+
+    参数:
+        features: 12 项特征
+        config: 配置字典
+        risk_num: 当前风险等级编号
+        score: 当前风险分值
+
+    返回:
+        [低危, 中危, 高危] 概率列表
+    """
     try:
         model = xgb.XGBClassifier()
         model_path = str(config["model_path"]).replace("\\", "/")
@@ -30,8 +42,23 @@ def risk_probabilities(features, config, risk_num, score):
         return fallback
 
 
-def run_analysis(file_path, file_name, config, patient_info=None, progress_callback=None):
+def run_analysis(file_path, file_name, config, patient_info=None, progress_callback=None, symptoms=""):
+    """
+    执行完整分析流程：读取、预处理、R 峰检测、特征提取、模型推理和报告生成。
+
+    参数:
+        file_path: ECG 文件路径
+        file_name: 文件名
+        config: 配置项
+        patient_info: 患者信息
+        progress_callback: 进度回调函数
+        symptoms: 症状描述
+
+    返回:
+        (result, message)
+    """
     def update(index):
+        # 进度条按固定阶段推进，便于前台展示处理状态
         if progress_callback is not None:
             progress_callback(index)
 
@@ -91,6 +118,7 @@ def run_analysis(file_path, file_name, config, patient_info=None, progress_callb
         "file_name": file_name,
         "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "patient_info": patient_info,
+        "symptoms": str(symptoms or "").strip(),
         "signal": clean_signal,
         "fs": fs,
         "r_peaks": r_peaks,

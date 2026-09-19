@@ -21,6 +21,16 @@ DEFAULT_UI_CONFIG = {
 
 
 def normalize_config(config):
+    """
+    把配置项补齐到本地运行所需的绝对路径和默认值。
+
+    参数:
+        config: 当前配置字典
+
+    返回:
+        标准化后的配置字典
+    """
+    # 统一把相对路径转换成项目根目录下的绝对路径，避免不同工作目录下运行不一致
     result = DEFAULT_UI_CONFIG.copy()
     result.update(config or {})
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +43,7 @@ def normalize_config(config):
 
 
 def init_state():
+    """初始化 session state 中的前端和分析状态字段。"""
     defaults = {
         "analysis_result": None,
         "selected_file": None,
