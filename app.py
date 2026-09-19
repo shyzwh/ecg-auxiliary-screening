@@ -217,6 +217,16 @@ def render_report_section(title, body, bg_color="#f5f7ff", text_color="#18324f")
     )
 
 
+def get_llm_request_settings():
+    """只在启用自定义 API 时返回前端覆盖项，否则使用后台默认配置。"""
+    if not st.session_state.get("use_custom_api", False):
+        return None, None, None
+    api_key = st.session_state.get("custom_api_key", "").strip() or None
+    model = st.session_state.get("custom_model", "").strip() or None
+    base_url = st.session_state.get("custom_base_url", "").strip() or None
+    return api_key, model, base_url
+
+
 # 渲染心电分析页面
 # 负责上传、校验、推理和报告展示的主流程
 
@@ -466,11 +476,12 @@ def analysis_page(config):
             render_section_title("AI智能解读")
             st.caption("AI解读用于辅助理解筛查结果，不能替代执业医师诊断。")
             if st.button("生成AI智能解读", use_container_width=True):
+                llm_api_key, llm_model, llm_base_url = get_llm_request_settings()
                 diagnosis = generate_ai_diagnosis(
                     result,
-                    api_key=st.session_state.get("custom_api_key", "") or None,
-                    model=st.session_state.get("custom_model", "") or None,
-                    base_url=st.session_state.get("custom_base_url", "") or None,
+                    api_key=llm_api_key,
+                    model=llm_model,
+                    base_url=llm_base_url,
                     symptoms=result.get("symptoms", ""),
                 )
                 if diagnosis is None:
@@ -494,7 +505,8 @@ def analysis_page(config):
             render_section_title("问AI")
             question = st.text_input("请输入关于本次心电结果或常见心电疾病的问题", key="rag_question")
             if st.button("提问", key="ask_rag", use_container_width=True):
-                answer = answer_with_rag(question)
+                llm_api_key, llm_model, llm_base_url = get_llm_request_settings()
+                answer = answer_with_rag(question, api_key=llm_api_key, model=llm_model, base_url=llm_base_url)
                 if answer:
                     st.session_state["rag_answer"] = answer
                 else:

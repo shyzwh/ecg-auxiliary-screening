@@ -356,12 +356,15 @@ def generate_ai_diagnosis(analysis_result, api_key=None, model=None, base_url=No
         return None
 
 
-def answer_with_rag(question):
+def answer_with_rag(question, api_key=None, model=None, base_url=None):
     """
     用本地疾病知识库和 GLM 生成针对性回答。
 
     参数:
         question: 用户提问
+        api_key: 自定义密钥，为 None 时使用后台默认密钥
+        model: 自定义模型，为 None 时使用默认模型
+        base_url: 自定义接口地址，为 None 时使用默认地址
 
     返回:
         纯文本回答或 None
@@ -381,8 +384,12 @@ def answer_with_rag(question):
         )
         return _call_glm_api(
             prompt,
+            api_key=api_key,
+            model_name=model,
+            base_url=base_url,
             timeout=30,
             system_prompt="你是心内科医生助手，负责依据可靠知识向基层医护人员和患者解释常见心电问题。",
         )
-    except Exception:
+    except Exception as exc:
+        LOGGER.exception("RAG请求失败: %s", exc)
         return None
